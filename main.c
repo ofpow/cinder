@@ -32,23 +32,25 @@
 #include "sphere.h"
 #include "hitablelist.h"
 #include "camera.h"
+#include "material.h"
 
 #define X 600
 #define Y 300
 #define S 50
 
-vec3 color(Ray r, Hitable_List world) {
+vec3 color(Ray r, Hitable_List world, int depth) {
     hit_record rec = {0};
     if (hit(world, r, 0.001, FLT_MAX, &rec)) {
-        vec3 target = add_vec3(
-            add_vec3(
-                rec.p,
-                rec.normal
-            ),
-            random_in_unit_sphere()
-        );
-        return scale_vec3(color((Ray){rec.p, subtract_vec3(target, rec.p)}, world), 0.5);
-        return scale_vec3((vec3){rec.normal.x + 1, rec.normal.y + 1, rec.normal.z + 1}, 0.5);
+        Ray scattered = {0};
+        vec3 attenuation = {0};
+        if (depth < 50 && scatter(rec.mat, &r, &rec, &attenuation, &scattered)) {
+            return mult_vec3(
+                attenuation,
+                color(scattered, world, depth + 1)
+            );
+        } else {
+            return (vec3){0, 0, 0};
+        }
     } else {
         vec3 unit_direction = unit_vector(r.direction);
         float t = 0.5 * (unit_direction.y + 1.0);
@@ -70,9 +72,25 @@ int main(void) {
         10
     };
 
-    Sphere *s = new_sphere((vec3){0, 0, -1}, 0.5);
+    Sphere *s = new_sphere(
+        (vec3){0, 0, -1}, 0.5,
+        (Material){Lambertian, (vec3){0.8, 0.3, 0.3}}
+    );
     append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere((vec3){0, -100.5, -1}, 100);
+    s = new_sphere(
+        (vec3){0, -100.5, -1}, 100,
+        (Material){Lambertian, (vec3){0.8, 0.8, 0}}
+    );
+    append(world, ((Hitable_Entry){SPHERE, s}));
+    s = new_sphere(
+        (vec3){1, 0, -1}, 0.5,
+        (Material){Metal, (vec3){0.8, 0.6, 0.2}}
+    );
+    append(world, ((Hitable_Entry){SPHERE, s}));
+    s = new_sphere(
+        (vec3){-1, 0, -1}, 0.5,
+        (Material){Metal, (vec3){0.8, 0.8, 0.8}}
+    );
     append(world, ((Hitable_Entry){SPHERE, s}));
 
     for (int j = Y - 1; j >= 0; j--) {
@@ -82,7 +100,7 @@ int main(void) {
                 float u = (float)(i + drand48()) / (float)X;
                 float v = (float)(j + drand48()) / (float)Y;
                 Ray r = get_ray(u, v); 
-                col = add_vec3(col, color(r, world));
+                col = add_vec3(col, color(r, world, 0));
             }
             
             col = scale_vec3(col, 1.0/S);

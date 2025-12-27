@@ -28,6 +28,14 @@ vec3 subtract_vec3(vec3 a, vec3 b) {
     };
 }
 
+vec3 mult_vec3(vec3 a, vec3 b) {
+    return (vec3) {
+        a.x * b.x,
+        a.y * b.y,
+        a.z * b.z
+    };
+}
+
 vec3 scale_vec3(vec3 v, float s) {
     return (vec3){v.x * s, v.y * s, v.z * s};
 }
@@ -46,4 +54,14 @@ vec3 unit_vector(vec3 v) {
 
 float dot(vec3 v1, vec3 v2) {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z; 
+}
+
+vec3 reflect(vec3 v, vec3 n) {
+    return subtract_vec3(
+        v,
+        scale_vec3(
+            n,
+            2*dot(v, n)
+        )
+    );
 }

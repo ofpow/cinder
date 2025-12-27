@@ -3,12 +3,14 @@
 typedef struct Sphere {
     vec3 center;
     float radius;
+    Material mat;
 } Sphere;
 
-Sphere *new_sphere(vec3 center, float radius) {
+Sphere *new_sphere(vec3 center, float radius, Material mat) {
     Sphere *s = calloc(1, sizeof(Sphere));
     s->center = center;
     s->radius = radius;
+    s->mat = mat;
     return s;
 }
 
@@ -26,6 +28,7 @@ bool sphere_hit(Sphere *s, Ray r, float t_min, float t_max, hit_record *rec) {
             rec->t = temp;
             rec->p = point_at_parameter(&r, rec->t);
             rec->normal = scale_vec3(subtract_vec3(rec->p, s->center), (1 / s->radius));
+            rec->mat = s->mat;
             return true;
         }
         temp = (-b + sqrtf(b*b - a*c))/a;
@@ -33,6 +36,7 @@ bool sphere_hit(Sphere *s, Ray r, float t_min, float t_max, hit_record *rec) {
             rec->t = temp;
             rec->p = point_at_parameter(&r, rec->t);
             rec->normal = scale_vec3(subtract_vec3(rec->p, s->center), (1 / s->radius));
+            rec->mat = s->mat;
             return true;
         }
     }

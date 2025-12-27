@@ -1,37 +1,52 @@
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <float.h>
+
+#define append(_array, _element) do {                                               \
+    if (_array.index >= _array.capacity) {                                              \
+        _array.capacity *= 2;                                                           \
+        _array.data = realloc(_array.data, _array.capacity * sizeof(_array.data[0]));   \
+    }                                                                                   \
+                                                                                        \
+    _array.data[_array.index++] = _element;                                             \
+} while (0)                                                                             \
+
+#define free_array(_array, _free) do {        \
+    for (int i = 0; i < _array.index; i++) {  \
+        _free(_array.data[i]);                \
+    }                                         \
+    free(_array.data);                        \
+} while (0)                                   \
+
+#define define_array(_name, _type) \
+    typedef struct _name {         \
+        _type *data;               \
+        int64_t index;             \
+        int64_t capacity;          \
+    } _name                        \
 
 #include "vec3.h"
 #include "ray.h"
+#include "hitable.h"
+#include "sphere.h"
+#include "hitablelist.h"
 
 #define X 600
 #define Y 300
 
-float hit_sphere(vec3 center, float radius, Ray r) {
-    vec3 oc = subtract_vec3(r.origin, center);
-    
-    float a = dot(r.direction, r.direction);
-    float b = dot(oc, r.direction) * 2.0;
-    float c = dot(oc, oc) - radius*radius;
-    float discriminant = b*b - 4*a*c;
-
-    if (discriminant < 0) return -1.0;
-
-    return (-b - sqrtf(discriminant)) / (2.0 * a);
-}
-
-vec3 color(Ray r) {
-    float t = hit_sphere((vec3){0,0,-1}, 0.5, r);
-    if (t > 0) {
-        vec3 n = subtract_vec3(unit_vector(point_at_parameter(&r, t)), (vec3){0, 0, -1});
-        return scale_vec3((vec3){n.x + 1, n.y + 1, n.z + 1}, 0.5);
+vec3 color(Ray r, Hitable_List world) {
+    hit_record rec = {0};
+    if (hit(world, r, 0.0, FLT_MAX, &rec)) {
+        return scale_vec3((vec3){rec.normal.x + 1, rec.normal.y + 1, rec.normal.z + 1}, 0.5);
+    } else {
+        vec3 unit_direction = unit_vector(r.direction);
+        float t = 0.5 * (unit_direction.y + 1.0);
+        return add_vec3(
+            scale_vec3((vec3){1.0, 1.0, 1.0}, (1.0-t)),
+            scale_vec3((vec3){0.5, 0.7, 1.0}, t)
+        );
     }
-
-    vec3 unit_direction = unit_vector(r.direction);
-    t = 0.5 * (unit_direction.y + 1.0);
-    return add_vec3(
-        scale_vec3((vec3){1.0, 1.0, 1.0}, (1.0-t)),
-        scale_vec3((vec3){0.5, 0.7, 1.0}, t)
-    );
 }
 
 int main(void) {
@@ -43,6 +58,17 @@ int main(void) {
     vec3 horizontal = {4.0, 0.0, 0.0};
     vec3 vertical = {0.0, 2.0, 0.0};
     vec3 origin = {0.0, 0.0, 0.0};
+
+    Hitable_List world = {
+        calloc(10, sizeof(Hitable_Entry)),
+        0,
+        10
+    };
+
+    Sphere *s = new_sphere((vec3){0, 0, -1}, 0.5);
+    append(world, ((Hitable_Entry){SPHERE, s}));
+    s = new_sphere((vec3){0, -100.5, -1}, 100);
+    append(world, ((Hitable_Entry){SPHERE, s}));
 
     for (int j = Y - 1; j >= 0; j--) {
         for (int i = 0; i < X; i++) {
@@ -60,7 +86,7 @@ int main(void) {
                 )
             };
 
-            vec3 col = color(r);
+            vec3 col = color(r, world);
 
             printf("%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
         }

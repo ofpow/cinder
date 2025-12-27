@@ -39,7 +39,15 @@
 
 vec3 color(Ray r, Hitable_List world) {
     hit_record rec = {0};
-    if (hit(world, r, 0.0, FLT_MAX, &rec)) {
+    if (hit(world, r, 0.001, FLT_MAX, &rec)) {
+        vec3 target = add_vec3(
+            add_vec3(
+                rec.p,
+                rec.normal
+            ),
+            random_in_unit_sphere()
+        );
+        return scale_vec3(color((Ray){rec.p, subtract_vec3(target, rec.p)}, world), 0.5);
         return scale_vec3((vec3){rec.normal.x + 1, rec.normal.y + 1, rec.normal.z + 1}, 0.5);
     } else {
         vec3 unit_direction = unit_vector(r.direction);
@@ -78,6 +86,7 @@ int main(void) {
             }
             
             col = scale_vec3(col, 1.0/S);
+            col = (vec3){sqrtf(col.x), sqrtf(col.y), sqrtf(col.z)};
             printf("%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
         }
     }

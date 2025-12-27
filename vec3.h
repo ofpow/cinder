@@ -36,6 +36,10 @@ float vec3_length(vec3 v) {
     return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
+float squared_length(vec3 v) {
+    return v.x * v.x + v.y * v.y + v.z * v.z;   
+}
+
 vec3 unit_vector(vec3 v) {
     return scale_vec3(v, 1 / vec3_length(v));
 }

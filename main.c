@@ -31,9 +31,11 @@
 #include "hitable.h"
 #include "sphere.h"
 #include "hitablelist.h"
+#include "camera.h"
 
 #define X 600
 #define Y 300
+#define S 50
 
 vec3 color(Ray r, Hitable_List world) {
     hit_record rec = {0};
@@ -54,11 +56,6 @@ int main(void) {
     printf("%d %d\n", X, Y);
     printf("255\n");
 
-    vec3 lower_left_corner = {-2.0, -1.0, -1.0};
-    vec3 horizontal = {4.0, 0.0, 0.0};
-    vec3 vertical = {0.0, 2.0, 0.0};
-    vec3 origin = {0.0, 0.0, 0.0};
-
     Hitable_List world = {
         calloc(10, sizeof(Hitable_Entry)),
         0,
@@ -72,22 +69,15 @@ int main(void) {
 
     for (int j = Y - 1; j >= 0; j--) {
         for (int i = 0; i < X; i++) {
-            float u = (float)i / (float)X;
-            float v = (float)j / (float)Y;
-
-            Ray r = {
-                origin,
-                add_vec3(
-                    lower_left_corner,
-                    add_vec3(
-                        scale_vec3(horizontal, u),
-                        scale_vec3(vertical, v)
-                    )
-                )
-            };
-
-            vec3 col = color(r, world);
-
+            vec3 col = {0, 0, 0};
+            for (int s = 0; s < S; s++) {
+                float u = (float)(i + drand48()) / (float)X;
+                float v = (float)(j + drand48()) / (float)Y;
+                Ray r = get_ray(u, v); 
+                col = add_vec3(col, color(r, world));
+            }
+            
+            col = scale_vec3(col, 1.0/S);
             printf("%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
         }
     }

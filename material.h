@@ -1,6 +1,6 @@
 #pragma once
 
-bool scatter_lambertian(vec3 albedo, Ray *r_in, hit_record *rec, vec3 *attenuation, Ray *scattered) {
+bool scatter_lambertian(vec3 albedo, hit_record *rec, vec3 *attenuation, Ray *scattered) {
     vec3 target = add_vec3(
         add_vec3(
             rec->p,
@@ -22,8 +22,8 @@ bool scatter_metal(vec3 albedo, Ray *r_in, hit_record *rec, vec3 *attenuation, R
 
 bool scatter(Material mat, Ray *r, hit_record *rec, vec3 *attenuation, Ray *scattered) {
     switch (mat.type) {
-        case Lambertian: return scatter_lambertian(mat.albedo, r, rec, attenuation, scattered);
+        case Lambertian: return scatter_lambertian(mat.albedo, rec, attenuation, scattered);
         case Metal: return scatter_metal(mat.albedo, r, rec, attenuation, scattered, mat.fuzz);
-        default: fprintf(stderr, "cant scatter material type %d\n", mat); exit(1);
+        default: fprintf(stderr, "cant scatter material type %d\n", mat.type); exit(1);
     }
 }

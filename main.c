@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <float.h>
+#include <time.h>
+
+#include <omp.h>
 
 #define append(_array, _element) do {                                               \
     if (_array.index >= _array.capacity) {                                              \
@@ -34,8 +37,8 @@
 #include "camera.h"
 #include "material.h"
 
-#define X 600
-#define Y 300
+#define X 6000
+#define Y 3000
 #define S 50
 
 void print_progress(size_t count, size_t max) {
@@ -55,15 +58,15 @@ void print_progress(size_t count, size_t max) {
     fflush(stdout); 
 }
 
-vec3 color(Ray r, Hitable_List world, int depth) {
+vec3 color(Ray r, Hitable_List world, int depth, unsigned short xsubi[3]) {
     hit_record rec = {0};
     if (hit(world, r, 0.001, FLT_MAX, &rec)) {
         Ray scattered = {0};
         vec3 attenuation = {0};
-        if (depth < 50 && scatter(rec.mat, &r, &rec, &attenuation, &scattered)) {
+        if (depth < 50 && scatter(rec.mat, &r, &rec, &attenuation, &scattered, xsubi)) {
             return mult_vec3(
                 attenuation,
-                color(scattered, world, depth + 1)
+                color(scattered, world, depth + 1, xsubi)
             );
         } else {
             return (vec3){0, 0, 0};
@@ -108,22 +111,31 @@ int main(void) {
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
 
+    int threads = 16;
+
     int count = 0;
+#pragma omp parallel for schedule(dynamic) num_threads(threads) default(none) shared(world) shared(out) shared(count)
     for (int y = Y - 1; y >= 0; y--) {
         print_progress(count, X*Y);
+        unsigned short xsubi[3];
+        
+        unsigned int seed = time(NULL) ^ omp_get_thread_num(); 
+        xsubi[0] = (unsigned short)seed;
+        xsubi[1] = (unsigned short)(seed >> 16);
+        xsubi[2] = (unsigned short)(omp_get_thread_num());
+
         for (int x = 0; x < X; x++) {
             {
                 vec3 col = {0, 0, 0};
                 for (int s = 0; s < S; s++) {
-                    float u = (float)(x + drand48()) / (float)X;
-                    float v = (float)(y + drand48()) / (float)Y;
+                    float u = (float)(x + erand48(xsubi)) / (float)X;
+                    float v = (float)(y + erand48(xsubi)) / (float)Y;
                     Ray r = get_ray(u, v); 
-                    col = add_vec3(col, color(r, world, 0));
+                    col = add_vec3(col, color(r, world, 0, xsubi));
                 }
                 
                 col = scale_vec3(col, 1.0/S);
                 col = (vec3){sqrtf(col.x), sqrtf(col.y), sqrtf(col.z)};
-
                 out[x][y] = col;
             }
         }

@@ -44,12 +44,12 @@ bool sphere_hit(Sphere *s, Ray r, float t_min, float t_max, hit_record *rec) {
     return false;
 }
 
-vec3 random_in_unit_sphere() {
+vec3 random_in_unit_sphere(unsigned short xsubi[3]) {
     vec3 p = {0, 0, 0};
     
     do {
         p = subtract_vec3(
-            scale_vec3((vec3){drand48(), drand48(), drand48()}, 2.0),
+            scale_vec3((vec3){erand48(xsubi), erand48(xsubi), erand48(xsubi)}, 2.0),
             (vec3){1, 1, 1}
         );
     } while (squared_length(p) >= 1.0);

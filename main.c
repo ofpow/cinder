@@ -111,14 +111,17 @@ int main(void) {
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
 
-    int threads = 16;
+    int num_threads = 16;
 
     int count = 0;
-#pragma omp parallel for schedule(dynamic) num_threads(threads) default(none) shared(world) shared(out) shared(count)
+#pragma omp parallel for schedule(dynamic) num_threads(num_threads) \
+    shared(world) shared(out) shared(count)
     for (int y = Y - 1; y >= 0; y--) {
-        print_progress(count, X*Y);
-        unsigned short xsubi[3];
+        if (omp_get_thread_num() == 0)
+            print_progress(count, X*Y);
         
+        unsigned short xsubi[3];
+
         unsigned int seed = time(NULL) ^ omp_get_thread_num(); 
         xsubi[0] = (unsigned short)seed;
         xsubi[1] = (unsigned short)(seed >> 16);

@@ -37,9 +37,9 @@
 #include "camera.h"
 #include "material.h"
 
-#define X 6000
-#define Y 3000
-#define S 50
+#define X 3000
+#define Y 1500
+#define S 25
 
 void print_progress(size_t count, size_t max) {
     int bar_width = 50;
@@ -92,7 +92,7 @@ int main(void) {
 
     Sphere *s = new_sphere(
         (vec3){0, 0, -1}, 0.5,
-        (Material){Lambertian, (vec3){0.8, 0.3, 0.3}, 0}
+        (Material){Lambertian, (vec3){0.1, 0.2, 0.5}, 0}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
@@ -107,7 +107,12 @@ int main(void) {
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
         (vec3){-1, 0, -1}, 0.5,
-        (Material){Metal, (vec3){0.8, 0.8, 0.8}, 1}
+        (Material){Dielectric, (vec3){0}, 1.5}
+    );
+    append(world, ((Hitable_Entry){SPHERE, s}));
+    s = new_sphere(
+        (vec3){-1, 0, -1}, -0.45,
+        (Material){Dielectric, (vec3){0}, 1.5}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
 

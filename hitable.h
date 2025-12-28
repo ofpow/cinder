@@ -3,12 +3,13 @@
 typedef enum {
     Lambertian,
     Metal,
+    Dielectric,
 } Material_Type;
 
 typedef struct Material {
     Material_Type type;
     vec3 albedo;
-    float fuzz;
+    float data; // fuzz for metal, refraction index for dielectric
 } Material;
 
 typedef struct hit_record {

@@ -38,6 +38,23 @@
 #define Y 300
 #define S 50
 
+void print_progress(size_t count, size_t max) {
+    int bar_width = 50;
+    float progress = (float) count / max;
+    int bar_length = progress * bar_width;
+
+    printf("\rProgress: ["); 
+    for (int i = 0; i < bar_length; ++i) {
+        printf("#");
+    }
+    for (int i = bar_length; i < bar_width; ++i) {
+        printf(" ");
+    }
+    printf("] %.2f%%", progress * 100);
+
+    fflush(stdout); 
+}
+
 vec3 color(Ray r, Hitable_List world, int depth) {
     hit_record rec = {0};
     if (hit(world, r, 0.001, FLT_MAX, &rec)) {
@@ -62,9 +79,11 @@ vec3 color(Ray r, Hitable_List world, int depth) {
 }
 
 int main(void) {
-    printf("P3\n");
-    printf("%d %d\n", X, Y);
-    printf("255\n");
+    FILE *f = fopen("out.ppm", "w");
+
+    fprintf(f, "P3\n");
+    fprintf(f, "%d %d\n", X, Y);
+    fprintf(f, "255\n");
 
     Hitable_List world = {
         calloc(10, sizeof(Hitable_Entry)),
@@ -92,9 +111,13 @@ int main(void) {
         (Material){Metal, (vec3){0.8, 0.8, 0.8}}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
-
+    
+    int count = 0;
     for (int j = Y - 1; j >= 0; j--) {
+        print_progress(count, X*Y);
         for (int i = 0; i < X; i++) {
+            count++;
+
             vec3 col = {0, 0, 0};
             for (int s = 0; s < S; s++) {
                 float u = (float)(i + drand48()) / (float)X;
@@ -105,9 +128,12 @@ int main(void) {
             
             col = scale_vec3(col, 1.0/S);
             col = (vec3){sqrtf(col.x), sqrtf(col.y), sqrtf(col.z)};
-            printf("%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
+            fprintf(f, "%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
         }
     }
-    
+    print_progress(count, X*Y);
+    printf("\n");
+
+    fclose(f); 
     return 0;
 }

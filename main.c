@@ -93,22 +93,22 @@ int main(void) {
 
     Sphere *s = new_sphere(
         (vec3){0, 0, -1}, 0.5,
-        (Material){Lambertian, (vec3){0.8, 0.3, 0.3}}
+        (Material){Lambertian, (vec3){0.8, 0.3, 0.3}, 0}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
         (vec3){0, -100.5, -1}, 100,
-        (Material){Lambertian, (vec3){0.8, 0.8, 0}}
+        (Material){Lambertian, (vec3){0.8, 0.8, 0}, 0}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
         (vec3){1, 0, -1}, 0.5,
-        (Material){Metal, (vec3){0.8, 0.6, 0.2}}
+        (Material){Metal, (vec3){0.8, 0.6, 0.2}, 0.3}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
         (vec3){-1, 0, -1}, 0.5,
-        (Material){Metal, (vec3){0.8, 0.8, 0.8}}
+        (Material){Metal, (vec3){0.8, 0.8, 0.8}, 1}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     

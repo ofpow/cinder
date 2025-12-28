@@ -8,6 +8,7 @@ typedef enum {
 typedef struct Material {
     Material_Type type;
     vec3 albedo;
+    float fuzz;
 } Material;
 
 typedef struct hit_record {

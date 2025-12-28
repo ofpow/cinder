@@ -78,13 +78,9 @@ vec3 color(Ray r, Hitable_List world, int depth) {
     }
 }
 
+vec3 out[X][Y];
+
 int main(void) {
-    FILE *f = fopen("out.ppm", "w");
-
-    fprintf(f, "P3\n");
-    fprintf(f, "%d %d\n", X, Y);
-    fprintf(f, "255\n");
-
     Hitable_List world = {
         calloc(10, sizeof(Hitable_Entry)),
         0,
@@ -103,7 +99,7 @@ int main(void) {
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
         (vec3){1, 0, -1}, 0.5,
-        (Material){Metal, (vec3){0.8, 0.6, 0.2}, 0.3}
+        (Material){Metal, (vec3){0.8, 0.6, 0.2}, 0.15}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
@@ -111,28 +107,43 @@ int main(void) {
         (Material){Metal, (vec3){0.8, 0.8, 0.8}, 1}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
-    
-    int count = 0;
-    for (int j = Y - 1; j >= 0; j--) {
-        print_progress(count, X*Y);
-        for (int i = 0; i < X; i++) {
-            count++;
 
-            vec3 col = {0, 0, 0};
-            for (int s = 0; s < S; s++) {
-                float u = (float)(i + drand48()) / (float)X;
-                float v = (float)(j + drand48()) / (float)Y;
-                Ray r = get_ray(u, v); 
-                col = add_vec3(col, color(r, world, 0));
+    int count = 0;
+    for (int y = Y - 1; y >= 0; y--) {
+        print_progress(count, X*Y);
+        for (int x = 0; x < X; x++) {
+            {
+                vec3 col = {0, 0, 0};
+                for (int s = 0; s < S; s++) {
+                    float u = (float)(x + drand48()) / (float)X;
+                    float v = (float)(y + drand48()) / (float)Y;
+                    Ray r = get_ray(u, v); 
+                    col = add_vec3(col, color(r, world, 0));
+                }
+                
+                col = scale_vec3(col, 1.0/S);
+                col = (vec3){sqrtf(col.x), sqrtf(col.y), sqrtf(col.z)};
+
+                out[x][y] = col;
             }
-            
-            col = scale_vec3(col, 1.0/S);
-            col = (vec3){sqrtf(col.x), sqrtf(col.y), sqrtf(col.z)};
-            fprintf(f, "%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
         }
+        count += X;
     }
     print_progress(count, X*Y);
     printf("\n");
+
+    FILE *f = fopen("out.ppm", "w");
+
+    fprintf(f, "P3\n");
+    fprintf(f, "%d %d\n", X, Y);
+    fprintf(f, "255\n");
+
+    for (int j = Y - 1; j >= 0; j--) {
+        for (int i = 0; i < X; i++) {
+            vec3 col = out[i][j];
+            fprintf(f, "%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
+        }
+    }
 
     fclose(f); 
     return 0;

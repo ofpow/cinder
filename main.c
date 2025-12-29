@@ -94,32 +94,34 @@ int main(void) {
     vec3 lookat = {0, 0, -1};
     float dist_to_focus = vec3_length(subtract_vec3(lookfrom, lookat));
     float aperture = 0;
-    init_camera(lookfrom, lookat, (vec3){0, 1, 0}, 20, (float)X/(float)Y, aperture, dist_to_focus);
+    init_camera(lookfrom, lookat, (vec3){0, 1, 0}, 90, (float)X/(float)Y, aperture, dist_to_focus);
     Sphere *s = new_sphere(
-        (vec3){0, 0, -1}, 0.5,
-        (Material){Lambertian, (vec3){0.1, 0.2, 0.5}, 0}
+        (vec3){0, -1000, -1}, 1000,
+        (Material){Lambertian, (vec3){0.5, 0.5, 0.5}, 0}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){0, -100.5, -1}, 100,
-        (Material){Lambertian, (vec3){0.8, 0.8, 0}, 0}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){1, 0, -1}, 0.5,
-        (Material){Metal, (vec3){0.8, 0.6, 0.2}, 0.15}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){-1, 0, -1}, 0.5,
-        (Material){Dielectric, (vec3){0}, 1.5}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){-1, 0, -1}, -0.45,
-        (Material){Dielectric, (vec3){0}, 1.5}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
+
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            float mat = drand48();
+            vec3 center = {a+0.9+drand48(), 0.2, b*0.9*drand48()};
+            if (vec3_length(subtract_vec3(center, (vec3){4, 0.2, 0})) > 0.9) {
+                if (mat < 0.8) {
+                    s = new_sphere(center, 0.2, (Material){Lambertian,
+                        (vec3){drand48()*drand48(), drand48()*drand48(), drand48()*drand48()}, 0});
+                    append(world, ((Hitable_Entry){SPHERE, s}));
+                } else if (mat < 0.95) {
+                    s = new_sphere(center, 0.2, (Material){Metal,
+                        (vec3){drand48()*drand48(), drand48()*drand48(), drand48()*drand48()}, 0.5*drand48()});
+                    append(world, ((Hitable_Entry){SPHERE, s}));
+                } else {
+                    s = new_sphere(center, 0.2, (Material){Dielectric,
+                        (vec3){drand48()*drand48(), drand48()*drand48(), drand48()*drand48()}, 1.5});
+                    append(world, ((Hitable_Entry){SPHERE, s}));
+                }
+            }
+        }
+    }
 
     int num_threads = 16;
 

@@ -89,8 +89,12 @@ int main(void) {
         0,
         10
     };
-   
-    init_camera((vec3){-2, 2, 1}, (vec3){0, 0, -1}, (vec3){0, 1, 0}, 90, (float)X/(float)Y);
+    
+    vec3 lookfrom = {3, 3, 2};
+    vec3 lookat = {0, 0, -1};
+    float dist_to_focus = vec3_length(subtract_vec3(lookfrom, lookat));
+    float aperture = 0;
+    init_camera(lookfrom, lookat, (vec3){0, 1, 0}, 20, (float)X/(float)Y, aperture, dist_to_focus);
     Sphere *s = new_sphere(
         (vec3){0, 0, -1}, 0.5,
         (Material){Lambertian, (vec3){0.1, 0.2, 0.5}, 0}
@@ -139,7 +143,7 @@ int main(void) {
                 for (int s = 0; s < S; s++) {
                     float u = (float)(x + erand48(xsubi)) / (float)X;
                     float v = (float)(y + erand48(xsubi)) / (float)Y;
-                    Ray r = get_ray(u, v); 
+                    Ray r = get_ray(u, v, xsubi); 
                     col = add_vec3(col, color(r, world, 0, xsubi));
                 }
                 

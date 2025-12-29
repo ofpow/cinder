@@ -149,7 +149,7 @@ int main(void) {
         }
         count += X;
     }
-    print_progress(count, X*Y);
+    print_progress(X*Y, X*Y);
     printf("\n");
 
     FILE *f = fopen("out.ppm", "w");

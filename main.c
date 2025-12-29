@@ -89,30 +89,17 @@ int main(void) {
         0,
         10
     };
-
+   
+    init_camera(90, (float)X/(float)Y);
+    float R = cos(M_PI / 4);
     Sphere *s = new_sphere(
-        (vec3){0, 0, -1}, 0.5,
-        (Material){Lambertian, (vec3){0.1, 0.2, 0.5}, 0}
+        (vec3){-R, 0, -1}, R,
+        (Material){Lambertian, (vec3){0, 0, 1}, 0}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
     s = new_sphere(
-        (vec3){0, -100.5, -1}, 100,
-        (Material){Lambertian, (vec3){0.8, 0.8, 0}, 0}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){1, 0, -1}, 0.5,
-        (Material){Metal, (vec3){0.8, 0.6, 0.2}, 0.15}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){-1, 0, -1}, 0.5,
-        (Material){Dielectric, (vec3){0}, 1.5}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-    s = new_sphere(
-        (vec3){-1, 0, -1}, -0.45,
-        (Material){Dielectric, (vec3){0}, 1.5}
+        (vec3){R, 0, -1}, R,
+        (Material){Lambertian, (vec3){1, 0, 0}, 0}
     );
     append(world, ((Hitable_Entry){SPHERE, s}));
 

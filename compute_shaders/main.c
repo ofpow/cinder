@@ -25,7 +25,7 @@ int main(void)
     char *compute_code = calloc(compute_code_length, sizeof(char));
     sprintf(compute_code, "%s", "#version 430\n");
 
-    char *compute_includes[] = {"compute_shaders/ray.glsl", "compute_shaders/compute.glsl"};
+    char *compute_includes[] = {"compute_shaders/ray.glsl", "compute_shaders/vec3.glsl", "compute_shaders/compute.glsl"};
     for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
         char *s = LoadFileText(compute_includes[i]);
         int len = strlen(s);

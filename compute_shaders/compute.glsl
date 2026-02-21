@@ -7,10 +7,6 @@ layout(std430, binding = 1) restrict buffer buf_layout {
 uniform int X;
 uniform int Y;
 
-vec3 unit_vector(vec3 v) {
-    return v / length(v);
-}
-
 float hit_sphere(vec3 center, float radius, Ray r) {
     vec3 oc = r.origin - center;
     float a = dot(r.direction, r.direction);

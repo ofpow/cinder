@@ -1,5 +1,3 @@
-#version 430
-
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(std430, binding = 1) restrict buffer buf_layout {
@@ -9,17 +7,8 @@ layout(std430, binding = 1) restrict buffer buf_layout {
 uniform int X;
 uniform int Y;
 
-struct Ray {
-    vec3 origin;
-    vec3 direction;
-};
-
 vec3 unit_vector(vec3 v) {
     return v / length(v);
-}
-
-vec3 point_at_parameter(Ray r, float t) {
-    return r.origin + t*r.direction;
 }
 
 float hit_sphere(vec3 center, float radius, Ray r) {

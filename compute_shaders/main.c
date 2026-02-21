@@ -2,6 +2,8 @@
 #include <rlgl.h>
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 #define SCALE (2048 / X)
 
@@ -19,7 +21,19 @@ int main(void)
     InitWindow(X*SCALE, Y*SCALE, "");
     SetExitKey(KEY_Q);
 
-    char *compute_code = LoadFileText("compute_shaders/compute.glsl");
+    int compute_code_length = 14;
+    char *compute_code = calloc(compute_code_length, sizeof(char));
+    sprintf(compute_code, "%s", "#version 430\n");
+
+    char *compute_includes[] = {"compute_shaders/ray.glsl", "compute_shaders/compute.glsl"};
+    for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
+        char *s = LoadFileText(compute_includes[i]);
+        int len = strlen(s);
+        compute_code = realloc(compute_code, compute_code_length + len);
+        strcat(compute_code, s);
+        compute_code_length += len;
+    }
+
     unsigned int compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
     unsigned int compute_program = rlLoadComputeShaderProgram(compute_shader);
 

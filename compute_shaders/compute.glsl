@@ -23,11 +23,25 @@ vec3 horizontal = vec3(4.0, 0.0, 0.0);
 vec3 vertical = vec3(0.0, 2.0, 0.0);
 vec3 origin = vec3(0.0, 0.0, 0.0);
 
+Camera c = Camera(origin, lower_left_corner, horizontal, vertical);
+
+float rand(inout uint state) {
+    state = 1664525u * state + 1013904223u;
+    return float(state) / 4294967296.0;
+}
+
 void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
-    float u = float(x) / X;
-    float v = float(y) / Y;
-    Ray r = Ray(origin, lower_left_corner + u*horizontal + v*vertical);
-    buf[x + y*X] = vec4(color(r), 1.0);
+
+    vec3 col = vec3(0);
+    int aa_steps = 10;
+    for (int i = 0; i < aa_steps; i++) {
+        uint state = (x + y) * i;
+        float u = float(x + rand(state)) / X;
+        float v = float(y + rand(state)) / Y;
+        Ray ray = get_ray(c, u, v);
+        col += color(ray);
+    }
+    buf[x + y*X] = vec4(col / float(aa_steps), 1.0);
 }

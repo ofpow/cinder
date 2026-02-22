@@ -37,7 +37,7 @@ typedef struct Hitable {
 define_array(Hitables, Hitable);
 
 int main(void) {
-    const int X = 1024;
+    const int X = 256;
     const int Y = X/2;
 
     const Vector2 resolution = { (float)X, (float)Y };
@@ -55,6 +55,7 @@ int main(void) {
         "compute_shaders/hitable.glsl", 
         "compute_shaders/sphere.glsl", 
         "compute_shaders/hitablelist.glsl", 
+        "compute_shaders/camera.glsl", 
         "compute_shaders/compute.glsl"
     };
     for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
@@ -100,9 +101,6 @@ int main(void) {
     unsigned int screen = rlLoadShaderBuffer(X*Y*sizeof(vec4), NULL, RL_DYNAMIC_COPY);
 
     unsigned int world = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
-    Hitable *data = calloc(hitables.index, sizeof(Hitable));
-    rlReadShaderBuffer(world, data, hitables.index * sizeof(Hitable), 0);
-    printf("%d\n", data[0].type);
 
     Image img = GenImageColor(X, Y, WHITE);
     Texture tex = LoadTextureFromImage(img);

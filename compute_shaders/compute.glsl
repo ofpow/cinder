@@ -34,14 +34,21 @@ void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
 
-    vec3 col = vec3(0);
-    int aa_steps = 10;
-    for (int i = 0; i < aa_steps; i++) {
-        uint state = (x + y) * i;
-        float u = float(x + rand(state)) / X;
-        float v = float(y + rand(state)) / Y;
+    int aa_steps = 100;
+    if (aa_steps > 0) { 
+        vec3 col = vec3(0);
+        for (int i = 0; i < aa_steps; i++) {
+            uint state = (x + y) * i;
+            float u = float(x + rand(state)) / X;
+            float v = float(y + rand(state)) / Y;
+            Ray ray = get_ray(c, u, v);
+            col += color(ray);
+        }
+        buf[x + y*X] = vec4(col / float(aa_steps), 1.0);
+    } else {
+        float u = float(x) / X;
+        float v = float(y) / Y;
         Ray ray = get_ray(c, u, v);
-        col += color(ray);
+        buf[x + y*X] = vec4(color(ray), 1.0);
     }
-    buf[x + y*X] = vec4(col / float(aa_steps), 1.0);
 }

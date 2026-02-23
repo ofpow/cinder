@@ -6,7 +6,24 @@ layout(std430, binding = 1) restrict buffer screen {
 
 uniform int X;
 uniform int Y;
+
+uint rand_state = 0;
+
+float rand() {
+    rand_state = 1664525u * rand_state + 1013904223u;
+    return float(rand_state) / 4294967296.0;
+}
+
+vec3 random_in_unit_sphere() {
+    vec3 p = vec3(0);
+    do {
+        p = 2.0*vec3(rand(), rand(), rand()) - vec3(1);
+    } while ((p.x*p.x + p.y*p.y + p.z*p.z) >= 1.0);
+    return p;
+}
+
 const float FLT_MAX = 3.40282347e+38;
+
 vec3 color(Ray r) {
     hit_record rec = hit_record(0, vec3(0), vec3(0));
     if (hit(r, 0.0, FLT_MAX, rec)) {
@@ -25,22 +42,17 @@ vec3 origin = vec3(0.0, 0.0, 0.0);
 
 Camera c = Camera(origin, lower_left_corner, horizontal, vertical);
 
-float rand(inout uint state) {
-    state = 1664525u * state + 1013904223u;
-    return float(state) / 4294967296.0;
-}
-
 void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
+    rand_state = (x*1488 + y*6883) & 1878723;
 
-    int aa_steps = 100;
+    int aa_steps = 10;
     if (aa_steps > 0) { 
         vec3 col = vec3(0);
         for (int i = 0; i < aa_steps; i++) {
-            uint state = (x + y) * i;
-            float u = float(x + rand(state)) / X;
-            float v = float(y + rand(state)) / Y;
+            float u = float(x + rand()) / X;
+            float v = float(y + rand()) / Y;
             Ray ray = get_ray(c, u, v);
             col += color(ray);
         }

@@ -19,7 +19,7 @@ bool hit(Ray r, float t_min, float t_max, inout hit_record rec) {
         bool result = false;
         switch (hitables[i].type) {
             case SPHERE: 
-                Sphere s = Sphere(vec3(hitables[i].data[0], hitables[i].data[1], hitables[i].data[2]), hitables[i].data[3]);
+                Sphere s = hitable_sphere(hitables[i].data);
                 result = sphere_hit(s, r, t_min, closest_so_far, temp_rec); break;
             default:
                 return false;

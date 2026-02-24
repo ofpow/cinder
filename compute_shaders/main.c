@@ -99,29 +99,23 @@ int main(void) {
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 
     unsigned int screen = rlLoadShaderBuffer(X*Y*sizeof(vec4), NULL, RL_DYNAMIC_COPY);
-
     unsigned int world = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
 
     Image img = GenImageColor(X, Y, WHITE);
     Texture tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
-    rlEnableShader(compute_program);
-    rlBindShaderBuffer(screen, 1);
-    rlBindShaderBuffer(world, 2);
-
-    double start = GetTime();
-
-    rlComputeShaderDispatch(X/16, Y/16, 1);
-    vec4 *buf = calloc(X*Y, sizeof(vec4));
-    while (buf[0].w == 0.0) {
-        rlReadShaderBuffer(screen, buf, X*Y*sizeof(vec4), 0);
-    }
-    free(buf);
-    printf("render time: %.3f ms\n", (GetTime() - start) * 1000.0);
-    rlDisableShader();
+    int frame = 1;
 
     while (!WindowShouldClose()) {
+        frame++;
+
+        rlEnableShader(compute_program);
+        rlBindShaderBuffer(screen, 1);
+        rlBindShaderBuffer(world, 2);
+        rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
+        rlComputeShaderDispatch(X/16, Y/16, 1);
+        rlDisableShader();
 
         BeginDrawing();
         BeginShaderMode(frag_shader);

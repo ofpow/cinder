@@ -47,25 +47,22 @@ vec3 origin = vec3(0.0, 0.0, 0.0);
 
 Camera c = Camera(origin, lower_left_corner, horizontal, vertical);
 
+uniform int rand_seed;
+
 void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
-    rand_state = (x*1488 + y*6883) & 1878723;
+    rand_state = ((x*1488 + y*6883) & 1878723) * rand_seed;
 
-    int aa_steps = 1000;
-    if (aa_steps > 0) { 
-        vec3 col = vec3(0);
-        for (int i = 0; i < aa_steps; i++) {
-            float u = float(x + rand()) / X;
-            float v = float(y + rand()) / Y;
-            Ray ray = get_ray(c, u, v);
-            col += color(ray);
-        }
-        buf[x + y*X] = vec4(sqrt(col / float(aa_steps)), 1.0);
-    } else {
-        float u = float(x) / X;
-        float v = float(y) / Y;
+    int aa_steps = 10;
+    vec3 col = vec3(0);
+    for (int i = 0; i < aa_steps; i++) {
+        float u = float(x + rand()) / X;
+        float v = float(y + rand()) / Y;
         Ray ray = get_ray(c, u, v);
-        buf[x + y*X] = vec4(sqrt(color(ray)), 1.0);
+        col += color(ray);
     }
+    vec4 current = buf[x + y*X];
+    vec3 new_color = current.xyz + sqrt(col / float(aa_steps));
+    buf[x + y*X] = vec4(new_color, current.w + 1);
 }

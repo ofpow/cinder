@@ -13,5 +13,5 @@ uniform int X;
 
 void main() {
     ivec2 coords = ivec2(fragTexCoord*resolution);
-    finalColor = buf[coords.x + X*coords.y];
+    finalColor = buf[coords.x + X*coords.y]/buf[coords.x + X*coords.y].w;
 }

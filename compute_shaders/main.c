@@ -37,7 +37,7 @@ typedef struct Hitable {
 define_array(Hitables, Hitable);
 
 int main(void) {
-    const int X = 256;
+    const int X = 1024;
     const int Y = X/2;
 
     const Vector2 resolution = { (float)X, (float)Y };
@@ -106,14 +106,14 @@ int main(void) {
     Texture tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
-    while (!WindowShouldClose())
-    {
-        rlEnableShader(compute_program);
-        rlBindShaderBuffer(screen, 1);
-        unsigned int world = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
-        rlBindShaderBuffer(world, 2);
-        rlComputeShaderDispatch(X/16, Y/16, 1);
-        rlDisableShader();
+    rlEnableShader(compute_program);
+    rlBindShaderBuffer(screen, 1);
+    rlBindShaderBuffer(world, 2);
+    rlComputeShaderDispatch(X/16, Y/16, 1);
+    rlDrawRenderBatchActive();
+    rlDisableShader();
+
+    while (!WindowShouldClose()) {
 
         BeginDrawing();
 

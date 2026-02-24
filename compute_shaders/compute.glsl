@@ -23,15 +23,20 @@ vec3 random_in_unit_sphere() {
 }
 
 const float FLT_MAX = 3.40282347e+38;
-
 vec3 color(Ray r) {
-    hit_record rec = hit_record(0, vec3(0), vec3(0));
-    if (hit(r, 0.0, FLT_MAX, rec)) {
-        return vec3(rec.normal.x + 1, rec.normal.y + 1, rec.normal.z + 1) * 0.5;
-    } else {
-        vec3 unit_dir = unit_vector(r.direction);
-        float t = 0.5*(-unit_dir.y + 1.0);
-        return (1.0-t)*vec3(1.0) + t*vec3(0.5, 0.7, 1.0);
+    vec3 attenuated = vec3(1.0);
+    for (int i = 0; i < 50; ++i) {
+        hit_record rec = hit_record(0, vec3(0), vec3(0));
+        if (hit(r, 0.001, FLT_MAX, rec)) {
+            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+            attenuated *= 0.5;
+            r = Ray(rec.p, normalize(target - rec.p));
+        } else {
+            vec3 unit_dir = normalize(r.direction);
+            float t = 0.5 * (-unit_dir.y + 1.0);
+            vec3 col = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
+            return attenuated * col;
+        }
     }
 }
 
@@ -47,7 +52,7 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
     rand_state = (x*1488 + y*6883) & 1878723;
 
-    int aa_steps = 10;
+    int aa_steps = 100;
     if (aa_steps > 0) { 
         vec3 col = vec3(0);
         for (int i = 0; i < aa_steps; i++) {
@@ -56,11 +61,11 @@ void main() {
             Ray ray = get_ray(c, u, v);
             col += color(ray);
         }
-        buf[x + y*X] = vec4(col / float(aa_steps), 1.0);
+        buf[x + y*X] = vec4(sqrt(col / float(aa_steps)), 1.0);
     } else {
         float u = float(x) / X;
         float v = float(y) / Y;
         Ray ray = get_ray(c, u, v);
-        buf[x + y*X] = vec4(color(ray), 1.0);
+        buf[x + y*X] = vec4(sqrt(color(ray)), 1.0);
     }
 }

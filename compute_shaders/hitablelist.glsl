@@ -30,6 +30,5 @@ bool hit(Ray r, float t_min, float t_max, inout hit_record rec) {
             rec = temp_rec;
         }
     }
-    rec.normal.y = -rec.normal.y;
     return hit_anything;
 }

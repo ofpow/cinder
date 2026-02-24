@@ -52,7 +52,7 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
     rand_state = (x*1488 + y*6883) & 1878723;
 
-    int aa_steps = 100;
+    int aa_steps = 1000;
     if (aa_steps > 0) { 
         vec3 col = vec3(0);
         for (int i = 0; i < aa_steps; i++) {

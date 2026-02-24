@@ -109,14 +109,21 @@ int main(void) {
     rlEnableShader(compute_program);
     rlBindShaderBuffer(screen, 1);
     rlBindShaderBuffer(world, 2);
+
+    double start = GetTime();
+
     rlComputeShaderDispatch(X/16, Y/16, 1);
-    rlDrawRenderBatchActive();
+    vec4 *buf = calloc(X*Y, sizeof(vec4));
+    while (buf[0].w == 0.0) {
+        rlReadShaderBuffer(screen, buf, X*Y*sizeof(vec4), 0);
+    }
+    free(buf);
+    printf("render time: %.3f ms\n", (GetTime() - start) * 1000.0);
     rlDisableShader();
 
     while (!WindowShouldClose()) {
 
         BeginDrawing();
-
         BeginShaderMode(frag_shader);
         DrawTexture(tex, 0, 0, WHITE);
         DrawTexturePro(tex,

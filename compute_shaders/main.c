@@ -31,6 +31,7 @@ typedef struct vec4 {
 
 #define LAMBERTIAN 1
 #define METAL 2
+#define DIELECTRIC 3
 
 typedef struct Hitable {
     unsigned int type;
@@ -40,7 +41,7 @@ typedef struct Hitable {
 define_array(Hitables, Hitable);
 
 int main(void) {
-    const int X = 256;
+    const int X = 1024;
     const int Y = X/2;
 
     const Vector2 resolution = { (float)X, (float)Y };
@@ -87,7 +88,7 @@ int main(void) {
             0, 0, -1,     // center
             0.5,          // radius
             LAMBERTIAN,   // mat.type
-            0.8, 0.3, 0.3 // mat.albedo
+            0.1, 0.2, 0.5 // mat.albedo
         }
     }));
     append(hitables, ((Hitable){
@@ -114,9 +115,19 @@ int main(void) {
         .data = {
             -1, 0, -1,     // center
             0.5,           // radius
-            METAL,         // mat.type
+            DIELECTRIC,    // mat.type
             0.8, 0.8, 0.8, // mat.albedo
-            1.0            // mat.fuzz
+            1.5            // mat.fuzz
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            -1, 0, -1,     // center
+            -0.45,           // radius
+            DIELECTRIC,    // mat.type
+            0.8, 0.8, 0.8, // mat.albedo
+            1.5            // mat.fuzz
         }
     }));
 

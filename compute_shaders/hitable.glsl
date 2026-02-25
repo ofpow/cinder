@@ -1,10 +1,11 @@
 #define LAMBERTIAN 1
 #define METAL 2
+#define DIELECTRIC 3
 
 struct Material {
     uint type;
     vec3 albedo;
-    float fuzz;
+    float data;
 };
 
 struct hit_record {

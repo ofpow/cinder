@@ -2,7 +2,7 @@
 
 struct Hitable {
     uint type;
-    float data[8];
+    float data[9];
 };
 
 layout(std430, binding = 2) restrict buffer Hitables {
@@ -12,7 +12,7 @@ layout(std430, binding = 2) restrict buffer Hitables {
 uniform int num_hitables;
 
 bool hit(Ray r, float t_min, float t_max, inout hit_record rec) {
-    hit_record temp_rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0)));
+    hit_record temp_rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0), 0));
     bool hit_anything = false;
     float closest_so_far = t_max;
     for (int i = 0; i < num_hitables; i++) {

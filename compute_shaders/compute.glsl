@@ -11,7 +11,7 @@ const float FLT_MAX = 3.40282347e+38;
 vec3 color(Ray r) {
     vec3 final_color = vec3(1.0);
     for (int i = 0; i < 50; ++i) {
-        hit_record rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0)));
+        hit_record rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0), 0));
         if (hit(r, 0.001, FLT_MAX, rec)) {
             vec3 attenuation = vec3(0);
             Ray scattered = Ray(vec3(0), vec3(0));

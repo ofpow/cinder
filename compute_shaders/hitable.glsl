@@ -4,6 +4,7 @@
 struct Material {
     uint type;
     vec3 albedo;
+    float fuzz;
 };
 
 struct hit_record {

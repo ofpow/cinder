@@ -34,7 +34,7 @@ typedef struct vec4 {
 
 typedef struct Hitable {
     unsigned int type;
-    float data[8];
+    float data[9];
 } Hitable;
 
 define_array(Hitables, Hitable);
@@ -102,19 +102,21 @@ int main(void) {
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
-            1, 0, -1,     // center
-            0.5,          // radius
-            METAL,        // mat.type
-            0.8, 0.6, 0.2 // mat.albedo
+            1, 0, -1,      // center
+            0.5,           // radius
+            METAL,         // mat.type
+            0.8, 0.6, 0.2, // mat.albedo
+            0.3            // mat.fuzz
         }
     }));
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
-            -1, 0, -1,    // center
-            0.5,          // radius
-            METAL,        // mat.type
-            0.8, 0.8, 0.8 // mat.albedo
+            -1, 0, -1,     // center
+            0.5,           // radius
+            METAL,         // mat.type
+            0.8, 0.8, 0.8, // mat.albedo
+            1.0            // mat.fuzz
         }
     }));
 

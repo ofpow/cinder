@@ -29,15 +29,18 @@ typedef struct vec4 {
 
 #define SPHERE 1
 
+#define LAMBERTIAN 1
+#define METAL 2
+
 typedef struct Hitable {
     unsigned int type;
-    float data[4];
+    float data[8];
 } Hitable;
 
 define_array(Hitables, Hitable);
 
 int main(void) {
-    const int X = 1024;
+    const int X = 256;
     const int Y = X/2;
 
     const Vector2 resolution = { (float)X, (float)Y };
@@ -56,6 +59,7 @@ int main(void) {
         "compute_shaders/sphere.glsl", 
         "compute_shaders/hitablelist.glsl", 
         "compute_shaders/camera.glsl", 
+        "compute_shaders/material.glsl", 
         "compute_shaders/compute.glsl"
     };
     for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
@@ -79,11 +83,39 @@ int main(void) {
 
     append(hitables, ((Hitable){
         .type = SPHERE,
-        .data = {0, 0, -1, 0.5}
+        .data = {
+            0, 0, -1,     // center
+            0.5,          // radius
+            LAMBERTIAN,   // mat.type
+            0.8, 0.3, 0.3 // mat.albedo
+        }
     }));
     append(hitables, ((Hitable){
         .type = SPHERE,
-        .data = {0, 100.5, -1, 100}
+        .data = {
+            0, 100.5, -1,  // center
+            100,           // radius
+            LAMBERTIAN,    // mat.type
+            0.8, 0.8, 0.0  // mat.albedo
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            1, 0, -1,     // center
+            0.5,          // radius
+            METAL,        // mat.type
+            0.8, 0.6, 0.2 // mat.albedo
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            -1, 0, -1,    // center
+            0.5,          // radius
+            METAL,        // mat.type
+            0.8, 0.8, 0.8 // mat.albedo
+        }
     }));
 
     rlEnableShader(compute_program);

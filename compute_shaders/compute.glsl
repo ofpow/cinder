@@ -7,35 +7,27 @@ layout(std430, binding = 1) restrict buffer screen {
 uniform int X;
 uniform int Y;
 
-uint rand_state = 0;
-
-float rand() {
-    rand_state = 1664525u * rand_state + 1013904223u;
-    return float(rand_state) / 4294967296.0;
-}
-
-vec3 random_in_unit_sphere() {
-    vec3 p = vec3(0);
-    do {
-        p = 2.0*vec3(rand(), rand(), rand()) - vec3(1);
-    } while ((p.x*p.x + p.y*p.y + p.z*p.z) >= 1.0);
-    return p;
-}
-
 const float FLT_MAX = 3.40282347e+38;
 vec3 color(Ray r) {
-    vec3 attenuated = vec3(1.0);
+    vec3 final_color = vec3(1.0);
     for (int i = 0; i < 50; ++i) {
-        hit_record rec = hit_record(0, vec3(0), vec3(0));
+        hit_record rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0)));
         if (hit(r, 0.001, FLT_MAX, rec)) {
-            vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-            attenuated *= 0.5;
-            r = Ray(rec.p, normalize(target - rec.p));
+            vec3 attenuation = vec3(0);
+            Ray scattered = Ray(vec3(0), vec3(0));
+            if (scatter(rec.mat, r, rec, attenuation, scattered)) {
+                final_color *= attenuation;
+                r = scattered;
+            } else {
+                final_color *= 0.5;
+                vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+                r = Ray(rec.p, normalize(target - rec.p));
+            }
         } else {
             vec3 unit_dir = normalize(r.direction);
             float t = 0.5 * (-unit_dir.y + 1.0);
             vec3 col = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
-            return attenuated * col;
+            return final_color * col;
         }
     }
 }

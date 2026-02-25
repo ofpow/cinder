@@ -1,6 +1,7 @@
 struct Sphere {
     vec3 center;
     float radius;
+    Material mat;
 };
 
 bool sphere_hit(Sphere s, Ray r, float t_min, float t_max, inout hit_record rec) {
@@ -17,6 +18,7 @@ bool sphere_hit(Sphere s, Ray r, float t_min, float t_max, inout hit_record rec)
             rec.t = temp;
             rec.p = point_at_parameter(r, temp);
             rec.normal = (rec.p - s.center) / s.radius;
+            rec.mat = s.mat;
             return true;
         }
         temp = (-b + sqrt(discriminant)) / a;
@@ -24,6 +26,7 @@ bool sphere_hit(Sphere s, Ray r, float t_min, float t_max, inout hit_record rec)
             rec.t = temp;
             rec.p = point_at_parameter(r, temp);
             rec.normal = (rec.p - s.center) / s.radius;
+            rec.mat = s.mat;
             return true;
         }
     }
@@ -31,8 +34,10 @@ bool sphere_hit(Sphere s, Ray r, float t_min, float t_max, inout hit_record rec)
     return false;
 }
 
-Sphere hitable_sphere(float data[4]) {
+Sphere hitable_sphere(float data[8]) {
     return Sphere(
             vec3(data[0], data[1], data[2]),
-            data[3]);
+            data[3],
+            Material(uint(data[4]), vec3(data[5], data[6], data[7]))
+        );
 }

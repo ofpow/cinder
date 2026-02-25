@@ -32,13 +32,6 @@ vec3 color(Ray r) {
     }
 }
 
-vec3 lower_left_corner = vec3(-2.0, -1.0, -1.0);
-vec3 horizontal = vec3(4.0, 0.0, 0.0);
-vec3 vertical = vec3(0.0, 2.0, 0.0);
-vec3 origin = vec3(0.0, 0.0, 0.0);
-
-Camera c = Camera(origin, lower_left_corner, horizontal, vertical);
-
 uniform int rand_seed;
 
 void main() {
@@ -46,7 +39,9 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
     rand_state = ((x*1488 + y*6883) & 1878723) * rand_seed;
 
-    int aa_steps = 10;
+    init_camera(vec3(-2,2,1), vec3(0,0,-1), vec3(0,1,0), 20, float(X)/float(Y));
+
+    int aa_steps = 5;
     vec3 col = vec3(0);
     for (int i = 0; i < aa_steps; i++) {
         float u = float(x + rand()) / X;

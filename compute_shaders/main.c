@@ -201,6 +201,25 @@ int main(void) {
     int frame = 1;
 
     while (!WindowShouldClose()) {
+
+        if (IsKeyPressed(KEY_O)) {
+            printf("outputting\n");
+            vec4 *buf = calloc(X*Y, sizeof(vec4));
+            rlReadShaderBuffer(screen, buf, X*Y*sizeof(vec4), 0);
+            FILE *f = fopen("compute_shaders/out.ppm", "w");
+
+            fprintf(f, "P3\n");
+            fprintf(f, "%d %d\n", X, Y);
+            fprintf(f, "255\n");
+
+            for (int i = 0; i < X*Y; i++) {
+                vec4 col = buf[i];
+                fprintf(f, "%d %d %d\n", (int)(255.99*col.x/col.w), (int)(255.99*col.y/col.w), (int)(255.99*col.z/col.w));
+            }
+            free(buf);
+            printf("output done\n");
+        }
+
         frame++;
 
         rlEnableShader(compute_program);

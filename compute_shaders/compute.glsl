@@ -39,10 +39,10 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
     rand_state = ((x*1488 + y*6883) & 1878723) * rand_seed;
     
-    vec3 lookfrom = vec3(3, 3, 2);
-    vec3 lookat = vec3(0, 0, -1);
+    vec3 lookfrom = vec3(13, 2, 3);
+    vec3 lookat = vec3(0, 0, 0);
     float dist_to_focus = length(lookfrom-lookat);
-    float aperture = 2.0;
+    float aperture = 0.0;
     init_camera(lookfrom, lookat, vec3(0, 1, 0), 20, float(X)/float(Y), aperture, dist_to_focus);
 
     int aa_steps = 5;

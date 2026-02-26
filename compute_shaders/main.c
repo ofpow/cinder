@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #define append(_array, _element) do {                                               \
     if (_array.index >= _array.capacity) {                                              \
@@ -27,6 +28,22 @@ typedef struct vec4 {
     float x, y, z, w;
 } vec4;
 
+typedef struct vec3 {
+    float x, y, z;
+} vec3;
+
+float vec3_length(vec3 v) {
+    return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
+vec3 subtract_vec3(vec3 a, vec3 b) {
+    return (vec3){
+        a.x - b.x,
+        a.y - b.y,
+        a.z - b.z
+    };
+}
+
 #define SPHERE 1
 
 #define LAMBERTIAN 1
@@ -41,7 +58,7 @@ typedef struct Hitable {
 define_array(Hitables, Hitable);
 
 int main(void) {
-    const int X = 1024;
+    const int X = 512;
     const int Y = X/2;
 
     const Vector2 resolution = { (float)X, (float)Y };
@@ -81,55 +98,86 @@ int main(void) {
         0,
         10
     };
-
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
-            0, 0, -1,     // center
-            0.5,          // radius
+            0, -1000, -2,     // center
+            1000,          // radius
             LAMBERTIAN,   // mat.type
-            0.1, 0.2, 0.5 // mat.albedo
+            0.5, 0.5, 0.5 // mat.albedo
         }
     }));
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
-            0, 100.5, -1,  // center
-            100,           // radius
-            LAMBERTIAN,    // mat.type
-            0.8, 0.8, 0.0  // mat.albedo
+            0, 1, 0,     // center
+            1,          // radius
+            LAMBERTIAN,   // mat.type
+            0.4, 0.2, 0.1 // mat.albedo
         }
     }));
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
-            1, 0, -1,      // center
-            0.5,           // radius
-            METAL,         // mat.type
-            0.8, 0.6, 0.2, // mat.albedo
-            0.3            // mat.fuzz
+            4, 1, 0,     // center
+            1,          // radius
+            METAL,   // mat.type
+            0.7, 0.6, 0.5,
+            0
         }
     }));
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
-            -1, 0, -1,     // center
-            0.5,           // radius
-            DIELECTRIC,    // mat.type
-            0.8, 0.8, 0.8, // mat.albedo
-            1.5            // mat.fuzz
+            -4, 1, 0,     // center
+            1,          // radius
+            DIELECTRIC,   // mat.type
+            0.7, 0.6, 0.5,
+            1.5
         }
     }));
-    append(hitables, ((Hitable){
-        .type = SPHERE,
-        .data = {
-            -1, 0, -1,     // center
-            -0.45,           // radius
-            DIELECTRIC,    // mat.type
-            0.8, 0.8, 0.8, // mat.albedo
-            1.5            // mat.fuzz
+    
+    for (int a = -11; a < 11; a++) {
+        for (int b = -11; b < 11; b++) {
+            float mat = drand48();
+            vec3 center = {a+0.9+drand48(), 0.2, b*0.9*drand48()};
+            if (vec3_length(subtract_vec3(center, (vec3){4, 0.2, 0})) > 0.9) {
+                if (mat < 0.8) {
+                    append(hitables, ((Hitable){
+                        .type = SPHERE,
+                        .data = {
+                            center.x, center.y, center.z,     // center
+                            0.2,          // radius
+                            LAMBERTIAN,   // mat.type
+                            drand48()*drand48(), drand48()*drand48(), drand48()*drand48()
+                        }
+                    }));
+                } else if (mat < 0.95) {
+                    append(hitables, ((Hitable){
+                        .type = SPHERE,
+                        .data = {
+                            center.x, center.y, center.z,     // center
+                            0.2,          // radius
+                            METAL,   // mat.type
+                            drand48()*drand48(), drand48()*drand48(), drand48()*drand48(),
+                            0.5*drand48()
+                        }
+                    }));
+                } else {
+                    append(hitables, ((Hitable){
+                        .type = SPHERE,
+                        .data = {
+                            center.x, center.y, center.z,     // center
+                            0.2,          // radius
+                            DIELECTRIC,   // mat.type
+                            drand48()*drand48(), drand48()*drand48(), drand48()*drand48(),
+                            1.5
+                        }
+                    }));
+                }
+            }
         }
-    }));
+    }
 
     rlEnableShader(compute_program);
     rlSetUniform(rlGetLocationUniform(compute_program, "X"), &X, RL_SHADER_UNIFORM_INT, 1);

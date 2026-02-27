@@ -58,7 +58,7 @@ typedef struct Hitable {
 define_array(Hitables, Hitable);
 
 int main(void) {
-    const int X = 512;
+    const int X = 1024;
     const int Y = X/2;
 
     const Vector2 resolution = { (float)X, (float)Y };
@@ -242,6 +242,8 @@ int main(void) {
         EndShaderMode();
 
         DrawFPS(GetScreenWidth() - 100, 10);
+
+        printf("%f\n", GetFrameTime() * 1000);
 
         EndDrawing();
     }

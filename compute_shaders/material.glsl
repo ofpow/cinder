@@ -1,11 +1,11 @@
-bool scatter_lambertian(vec3 albedo, inout hit_record rec, inout vec3 attenuation, inout Ray scattered) {
+bool scatter_lambertian(vec3 albedo, hit_record rec, inout vec3 attenuation, inout Ray scattered) {
     vec3 target = rec.p + rec.normal + random_in_unit_sphere();
     scattered = Ray(rec.p, target-rec.p);
     attenuation = albedo;
     return true;
 }
 
-bool scatter_metal(vec3 albedo, inout Ray r_in, inout hit_record rec, inout vec3 attenuation, inout Ray scattered, float fuzz) {
+bool scatter_metal(vec3 albedo, Ray r_in, hit_record rec, inout vec3 attenuation, inout Ray scattered, float fuzz) {
     vec3 reflected = reflect(unit_vector(r_in.direction), normalize(rec.normal));
     scattered = Ray(rec.p, reflected + fuzz*random_in_unit_sphere());
     attenuation = albedo;
@@ -30,7 +30,7 @@ float schlick(float cosine, float ref_idx) {
     return r0 + (1-r0)*pow((1-cosine), 5);
 }
 
-bool scatter_dielectric(inout Ray r_in, inout hit_record rec, inout vec3 attenuation, inout Ray scattered, float ref_idx) {
+bool scatter_dielectric(Ray r_in, hit_record rec, inout vec3 attenuation, inout Ray scattered, float ref_idx) {
     vec3 outward_normal = vec3(0);
     vec3 reflected = reflect(r_in.direction, rec.normal);
 

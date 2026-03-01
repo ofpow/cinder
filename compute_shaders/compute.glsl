@@ -33,10 +33,17 @@ vec3 color(Ray r) {
 
 uniform int rand_seed;
 
+uint hash(uvec2 p) {
+    p = 1103515245U*((p >> 1U)^(p.yx));
+    uint h32 = 1103515245U*((p.x)^(p.y>>3U));
+    return h32^(h32 >> 16);
+}
+
 void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
-    rand_state = ((x*1488 + y*6883) & 1878723) * rand_seed;
+    rand_state = hash(gl_GlobalInvocationID.xy);
+    rand_state = hash(uvec2(rand_state, rand_seed));
     
     vec3 lookfrom = vec3(13, 2, 3);
     vec3 lookat = vec3(0, 0, 0);
@@ -44,7 +51,7 @@ void main() {
     float aperture = 0.0;
     init_camera(lookfrom, lookat, vec3(0, 1, 0), 20, float(X)/float(Y), aperture, dist_to_focus);
 
-    int aa_steps = 5;
+    int aa_steps = 1;
     vec3 col = vec3(0);
     for (int i = 0; i < aa_steps; i++) {
         float u = float(x + rand()) / X;

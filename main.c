@@ -198,7 +198,7 @@ int main(void) {
             printf("outputting\n");
             Vector4 *buf = calloc(X*Y, sizeof(Vector4));
             rlReadShaderBuffer(screen, buf, X*Y*sizeof(Vector4), 0);
-            FILE *f = fopen("compute_shaders/out.ppm", "w");
+            FILE *f = fopen("out.ppm", "w");
 
             fprintf(f, "P3\n");
             fprintf(f, "%d %d\n", X, Y);

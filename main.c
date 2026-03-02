@@ -38,47 +38,13 @@ typedef struct Hitable {
 
 define_array(Hitables, Hitable);
 
-int main(void) {
-    const int X = 1024;
-    const int Y = X/2;
-
-    const Vector2 resolution = { (float)X, (float)Y };
-
-    InitWindow(X*SCALE, Y*SCALE, "");
-    SetExitKey(KEY_Q);
-
-    int compute_code_length = 14;
-    char *compute_code = calloc(compute_code_length, sizeof(char));
-    sprintf(compute_code, "%s", "#version 430\n");
-
-    char *compute_includes[] = {
-        "compute_shaders/ray.glsl",
-        "compute_shaders/vec3.glsl", 
-        "compute_shaders/hitable.glsl", 
-        "compute_shaders/sphere.glsl", 
-        "compute_shaders/hitablelist.glsl", 
-        "compute_shaders/camera.glsl", 
-        "compute_shaders/material.glsl", 
-        "compute_shaders/compute.glsl"
-    };
-    for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
-        char *s = LoadFileText(compute_includes[i]);
-        int len = strlen(s);
-        compute_code = realloc(compute_code, compute_code_length + len);
-        strcat(compute_code, s);
-        free(s);
-        compute_code_length += len;
-    }
-    //printf("%s\n", compute_code);
-
-    unsigned int compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
-    unsigned int compute_program = rlLoadComputeShaderProgram(compute_shader);
-    
+Hitables setup_world(void) {
     Hitables hitables = (Hitables){
         calloc(10, sizeof(Hitable)),
         0,
         10
     };
+
     append(hitables, ((Hitable){
         .type = SPHERE,
         .data = {
@@ -159,6 +125,51 @@ int main(void) {
             }
         }
     }
+    return hitables;
+}
+
+char *assemble_compute_shader(void) {
+    int compute_code_length = 14;
+    char *compute_code = calloc(compute_code_length, sizeof(char));
+    sprintf(compute_code, "%s", "#version 430\n");
+
+    char *compute_includes[] = {
+        "compute_shaders/ray.glsl",
+        "compute_shaders/vec3.glsl", 
+        "compute_shaders/hitable.glsl", 
+        "compute_shaders/sphere.glsl", 
+        "compute_shaders/hitablelist.glsl", 
+        "compute_shaders/camera.glsl", 
+        "compute_shaders/material.glsl", 
+        "compute_shaders/compute.glsl"
+    };
+    for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
+        char *s = LoadFileText(compute_includes[i]);
+        int len = strlen(s);
+        compute_code = realloc(compute_code, compute_code_length + len);
+        strcat(compute_code, s);
+        free(s);
+        compute_code_length += len;
+    }
+    return compute_code;
+}
+
+int main(void) {
+    const int X = 1024;
+    const int Y = X/2;
+
+    const Vector2 resolution = { (float)X, (float)Y };
+
+    InitWindow(X*SCALE, Y*SCALE, "");
+    SetExitKey(KEY_Q);
+    
+    char *compute_code = assemble_compute_shader();
+    //printf("%s\n", compute_code);
+
+    unsigned int compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
+    unsigned int compute_program = rlLoadComputeShaderProgram(compute_shader);
+    
+    Hitables hitables = setup_world();
 
     rlEnableShader(compute_program);
     rlSetUniform(rlGetLocationUniform(compute_program, "X"), &X, RL_SHADER_UNIFORM_INT, 1);

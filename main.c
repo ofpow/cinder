@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <raymath.h>
 #include <rlgl.h>
 
 #include <stdlib.h>
@@ -23,26 +24,6 @@
     } _name                        \
 
 #define SCALE (2048 / X)
-
-typedef struct vec4 {
-    float x, y, z, w;
-} vec4;
-
-typedef struct vec3 {
-    float x, y, z;
-} vec3;
-
-float vec3_length(vec3 v) {
-    return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
-}
-
-vec3 subtract_vec3(vec3 a, vec3 b) {
-    return (vec3){
-        a.x - b.x,
-        a.y - b.y,
-        a.z - b.z
-    };
-}
 
 #define SPHERE 1
 
@@ -140,8 +121,8 @@ int main(void) {
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             float mat = drand48();
-            vec3 center = {a+0.9+drand48(), 0.2, b*0.9*drand48()};
-            if (vec3_length(subtract_vec3(center, (vec3){4, 0.2, 0})) > 0.9) {
+            Vector3 center = {a+0.9+drand48(), 0.2, b*0.9*drand48()};
+            if (Vector3Length(Vector3Subtract(center, (Vector3){4, 0.2, 0})) > 0.9) {
                 if (mat < 0.8) {
                     append(hitables, ((Hitable){
                         .type = SPHERE,
@@ -191,7 +172,7 @@ int main(void) {
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "resolution"), &resolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 
-    unsigned int screen = rlLoadShaderBuffer(X*Y*sizeof(vec4), NULL, RL_DYNAMIC_COPY);
+    unsigned int screen = rlLoadShaderBuffer(X*Y*sizeof(Vector4), NULL, RL_DYNAMIC_COPY);
     unsigned int world = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
 
     Image img = GenImageColor(X, Y, WHITE);
@@ -204,8 +185,8 @@ int main(void) {
 
         if (IsKeyPressed(KEY_O)) {
             printf("outputting\n");
-            vec4 *buf = calloc(X*Y, sizeof(vec4));
-            rlReadShaderBuffer(screen, buf, X*Y*sizeof(vec4), 0);
+            Vector4 *buf = calloc(X*Y, sizeof(Vector4));
+            rlReadShaderBuffer(screen, buf, X*Y*sizeof(Vector4), 0);
             FILE *f = fopen("compute_shaders/out.ppm", "w");
 
             fprintf(f, "P3\n");
@@ -213,7 +194,7 @@ int main(void) {
             fprintf(f, "255\n");
 
             for (int i = 0; i < X*Y; i++) {
-                vec4 col = buf[i];
+                Vector4 col = buf[i];
                 fprintf(f, "%d %d %d\n", (int)(255.99*col.x/col.w), (int)(255.99*col.y/col.w), (int)(255.99*col.z/col.w));
             }
             free(buf);

@@ -1,10 +1,10 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <float.h>
-#include <time.h>
+#include <raylib.h>
+#include <rlgl.h>
 
-#include <omp.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
 
 #define append(_array, _element) do {                                               \
     if (_array.index >= _array.capacity) {                                              \
@@ -13,14 +13,7 @@
     }                                                                                   \
                                                                                         \
     _array.data[_array.index++] = _element;                                             \
-} while (0)                                                                             \
-
-#define free_array(_array, _free) do {        \
-    for (int i = 0; i < _array.index; i++) {  \
-        _free(_array.data[i]);                \
-    }                                         \
-    free(_array.data);                        \
-} while (0)                                   \
+} while (0)
 
 #define define_array(_name, _type) \
     typedef struct _name {         \
@@ -29,149 +22,241 @@
         int64_t capacity;          \
     } _name                        \
 
-#include "vec3.h"
-#include "ray.h"
-#include "hitable.h"
-#include "sphere.h"
-#include "hitablelist.h"
-#include "camera.h"
-#include "material.h"
+#define SCALE (2048 / X)
 
-#define X 3000
-#define Y 1500
-#define S 20
+typedef struct vec4 {
+    float x, y, z, w;
+} vec4;
 
-void print_progress(size_t count, size_t max) {
-    int bar_width = 50;
-    float progress = (float) count / max;
-    int bar_length = progress * bar_width;
+typedef struct vec3 {
+    float x, y, z;
+} vec3;
 
-    printf("\rProgress: ["); 
-    for (int i = 0; i < bar_length; ++i) {
-        printf("#");
-    }
-    for (int i = bar_length; i < bar_width; ++i) {
-        printf(" ");
-    }
-    printf("] %.2f%%", progress * 100);
-
-    fflush(stdout); 
+float vec3_length(vec3 v) {
+    return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
 }
 
-vec3 color(Ray r, Hitable_List world, int depth, unsigned short xsubi[3]) {
-    hit_record rec = {0};
-    if (hit(world, r, 0.001, FLT_MAX, &rec)) {
-        Ray scattered = {0};
-        vec3 attenuation = {0};
-        if (depth < 50 && scatter(rec.mat, &r, &rec, &attenuation, &scattered, xsubi)) {
-            return mult_vec3(
-                attenuation,
-                color(scattered, world, depth + 1, xsubi)
-            );
-        } else {
-            return (vec3){0, 0, 0};
-        }
-    } else {
-        vec3 unit_direction = unit_vector(r.direction);
-        float t = 0.5 * (unit_direction.y + 1.0);
-        return add_vec3(
-            scale_vec3((vec3){1.0, 1.0, 1.0}, (1.0-t)),
-            scale_vec3((vec3){0.5, 0.7, 1.0}, t)
-        );
-    }
+vec3 subtract_vec3(vec3 a, vec3 b) {
+    return (vec3){
+        a.x - b.x,
+        a.y - b.y,
+        a.z - b.z
+    };
 }
 
-vec3 out[X][Y];
+#define SPHERE 1
+
+#define LAMBERTIAN 1
+#define METAL 2
+#define DIELECTRIC 3
+
+typedef struct Hitable {
+    unsigned int type;
+    float data[9];
+} Hitable;
+
+define_array(Hitables, Hitable);
 
 int main(void) {
-    Hitable_List world = {
-        calloc(10, sizeof(Hitable_Entry)),
+    const int X = 1024;
+    const int Y = X/2;
+
+    const Vector2 resolution = { (float)X, (float)Y };
+
+    InitWindow(X*SCALE, Y*SCALE, "");
+    SetExitKey(KEY_Q);
+
+    int compute_code_length = 14;
+    char *compute_code = calloc(compute_code_length, sizeof(char));
+    sprintf(compute_code, "%s", "#version 430\n");
+
+    char *compute_includes[] = {
+        "compute_shaders/ray.glsl",
+        "compute_shaders/vec3.glsl", 
+        "compute_shaders/hitable.glsl", 
+        "compute_shaders/sphere.glsl", 
+        "compute_shaders/hitablelist.glsl", 
+        "compute_shaders/camera.glsl", 
+        "compute_shaders/material.glsl", 
+        "compute_shaders/compute.glsl"
+    };
+    for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
+        char *s = LoadFileText(compute_includes[i]);
+        int len = strlen(s);
+        compute_code = realloc(compute_code, compute_code_length + len);
+        strcat(compute_code, s);
+        free(s);
+        compute_code_length += len;
+    }
+    //printf("%s\n", compute_code);
+
+    unsigned int compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
+    unsigned int compute_program = rlLoadComputeShaderProgram(compute_shader);
+    
+    Hitables hitables = (Hitables){
+        calloc(10, sizeof(Hitable)),
         0,
         10
     };
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            0, -1000, -2,     // center
+            1000,          // radius
+            LAMBERTIAN,   // mat.type
+            0.5, 0.5, 0.5 // mat.albedo
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            0, 1, 0,     // center
+            1,          // radius
+            LAMBERTIAN,   // mat.type
+            0.4, 0.2, 0.1 // mat.albedo
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            4, 1, 0,     // center
+            1,          // radius
+            METAL,   // mat.type
+            0.7, 0.6, 0.5,
+            0
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            -4, 1, 0,     // center
+            1,          // radius
+            DIELECTRIC,   // mat.type
+            0.7, 0.6, 0.5,
+            1.5
+        }
+    }));
     
-    vec3 lookfrom = {3, 3, 2};
-    vec3 lookat = {0, 0, -1};
-    float dist_to_focus = vec3_length(subtract_vec3(lookfrom, lookat));
-    float aperture = 0;
-    init_camera(lookfrom, lookat, (vec3){0, 1, 0}, 90, (float)X/(float)Y, aperture, dist_to_focus);
-    Sphere *s = new_sphere(
-        (vec3){0, -1000, -1}, 1000,
-        (Material){Lambertian, (vec3){0.5, 0.5, 0.5}, 0}
-    );
-    append(world, ((Hitable_Entry){SPHERE, s}));
-
     for (int a = -11; a < 11; a++) {
         for (int b = -11; b < 11; b++) {
             float mat = drand48();
             vec3 center = {a+0.9+drand48(), 0.2, b*0.9*drand48()};
             if (vec3_length(subtract_vec3(center, (vec3){4, 0.2, 0})) > 0.9) {
                 if (mat < 0.8) {
-                    s = new_sphere(center, 0.2, (Material){Lambertian,
-                        (vec3){drand48()*drand48(), drand48()*drand48(), drand48()*drand48()}, 0});
-                    append(world, ((Hitable_Entry){SPHERE, s}));
+                    append(hitables, ((Hitable){
+                        .type = SPHERE,
+                        .data = {
+                            center.x, center.y, center.z,     // center
+                            0.2,          // radius
+                            LAMBERTIAN,   // mat.type
+                            drand48()*drand48(), drand48()*drand48(), drand48()*drand48()
+                        }
+                    }));
                 } else if (mat < 0.95) {
-                    s = new_sphere(center, 0.2, (Material){Metal,
-                        (vec3){drand48()*drand48(), drand48()*drand48(), drand48()*drand48()}, 0.5*drand48()});
-                    append(world, ((Hitable_Entry){SPHERE, s}));
+                    append(hitables, ((Hitable){
+                        .type = SPHERE,
+                        .data = {
+                            center.x, center.y, center.z,     // center
+                            0.2,          // radius
+                            METAL,   // mat.type
+                            drand48()*drand48(), drand48()*drand48(), drand48()*drand48(),
+                            0.5*drand48()
+                        }
+                    }));
                 } else {
-                    s = new_sphere(center, 0.2, (Material){Dielectric,
-                        (vec3){drand48()*drand48(), drand48()*drand48(), drand48()*drand48()}, 1.5});
-                    append(world, ((Hitable_Entry){SPHERE, s}));
+                    append(hitables, ((Hitable){
+                        .type = SPHERE,
+                        .data = {
+                            center.x, center.y, center.z,     // center
+                            0.2,          // radius
+                            DIELECTRIC,   // mat.type
+                            drand48()*drand48(), drand48()*drand48(), drand48()*drand48(),
+                            1.5
+                        }
+                    }));
                 }
             }
         }
     }
 
-    int num_threads = 16;
+    rlEnableShader(compute_program);
+    rlSetUniform(rlGetLocationUniform(compute_program, "X"), &X, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "Y"), &Y, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "num_hitables"), &hitables.index, RL_SHADER_UNIFORM_INT, 1);
+    rlDisableShader();
 
-    int count = 0;
-#pragma omp parallel for schedule(dynamic) num_threads(num_threads) \
-    shared(world) shared(out) shared(count)
-    for (int y = Y - 1; y >= 0; y--) {
-        if (omp_get_thread_num() == 0)
-            print_progress(count, X*Y);
-        
-        unsigned short xsubi[3];
+    UnloadFileText(compute_code);
 
-        unsigned int seed = time(NULL) ^ omp_get_thread_num(); 
-        xsubi[0] = (unsigned short)seed;
-        xsubi[1] = (unsigned short)(seed >> 16);
-        xsubi[2] = (unsigned short)(omp_get_thread_num());
+    Shader frag_shader = LoadShader(NULL, "compute_shaders/frag.glsl");
+    SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "resolution"), &resolution, SHADER_UNIFORM_VEC2);
+    SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 
-        for (int x = 0; x < X; x++) {
-            {
-                vec3 col = {0, 0, 0};
-                for (int s = 0; s < S; s++) {
-                    float u = (float)(x + erand48(xsubi)) / (float)X;
-                    float v = (float)(y + erand48(xsubi)) / (float)Y;
-                    Ray r = get_ray(u, v, xsubi); 
-                    col = add_vec3(col, color(r, world, 0, xsubi));
-                }
-                
-                col = scale_vec3(col, 1.0/S);
-                col = (vec3){sqrtf(col.x), sqrtf(col.y), sqrtf(col.z)};
-                out[x][y] = col;
+    unsigned int screen = rlLoadShaderBuffer(X*Y*sizeof(vec4), NULL, RL_DYNAMIC_COPY);
+    unsigned int world = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
+
+    Image img = GenImageColor(X, Y, WHITE);
+    Texture tex = LoadTextureFromImage(img);
+    UnloadImage(img);
+
+    int frame = 1;
+
+    while (!WindowShouldClose()) {
+
+        if (IsKeyPressed(KEY_O)) {
+            printf("outputting\n");
+            vec4 *buf = calloc(X*Y, sizeof(vec4));
+            rlReadShaderBuffer(screen, buf, X*Y*sizeof(vec4), 0);
+            FILE *f = fopen("compute_shaders/out.ppm", "w");
+
+            fprintf(f, "P3\n");
+            fprintf(f, "%d %d\n", X, Y);
+            fprintf(f, "255\n");
+
+            for (int i = 0; i < X*Y; i++) {
+                vec4 col = buf[i];
+                fprintf(f, "%d %d %d\n", (int)(255.99*col.x/col.w), (int)(255.99*col.y/col.w), (int)(255.99*col.z/col.w));
             }
+            free(buf);
+            printf("output done\n");
         }
-        count += X;
+
+        frame++;
+
+        rlEnableShader(compute_program);
+        rlBindShaderBuffer(screen, 1);
+        rlBindShaderBuffer(world, 2);
+        rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
+        rlComputeShaderDispatch(X/16, Y/16, 1);
+        rlDisableShader();
+
+        BeginDrawing();
+        BeginShaderMode(frag_shader);
+        DrawTexture(tex, 0, 0, WHITE);
+        DrawTexturePro(tex,
+            (Rectangle){0, 0, tex.width, tex.height},
+            (Rectangle){0, 0, SCALE*tex.width, SCALE*tex.height},
+            (Vector2){0, 0},
+            0.0f,
+            WHITE
+        );
+        EndShaderMode();
+
+        DrawFPS(GetScreenWidth() - 100, 10);
+
+        printf("%f\n", GetFrameTime() * 1000);
+
+        EndDrawing();
     }
-    print_progress(X*Y, X*Y);
-    printf("\n");
 
-    FILE *f = fopen("out.ppm", "w");
+    rlUnloadShaderBuffer(screen);
+    rlUnloadShaderBuffer(world);
 
-    fprintf(f, "P3\n");
-    fprintf(f, "%d %d\n", X, Y);
-    fprintf(f, "255\n");
+    rlUnloadShaderProgram(compute_program);
 
-    for (int j = Y - 1; j >= 0; j--) {
-        for (int i = 0; i < X; i++) {
-            vec3 col = out[i][j];
-            fprintf(f, "%d %d %d\n", (int)(255.99*col.x), (int)(255.99*col.y), (int)(255.99*col.z));
-        }
-    }
+    UnloadTexture(tex);
+    UnloadShader(frag_shader);
 
-    fclose(f); 
+    CloseWindow();
+
     return 0;
 }

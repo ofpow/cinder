@@ -51,10 +51,10 @@ Hitables setup_world(void) {
             0, -1000, -2,     // center
             1000,          // radius
             LAMBERTIAN,   // mat.type
-            0.5, 0.5, 0.5,// mat.albedo
+            0.0, 0.0, 0.0,// mat.albedo
             0,            // mat.data
             1, 1, 1,       // mat.emission_col
-            0            // mat.emission_str
+            1            // mat.emission_str
         }
     }));
     append(hitables, ((Hitable){
@@ -63,7 +63,7 @@ Hitables setup_world(void) {
             0, 1, 0,     // center
             1,          // radius
             LAMBERTIAN,   // mat.type
-            0.4, 0.2, 0.1,// mat.albedo
+            0.0, 0.0, 0.0,// mat.albedo
             0,            // mat.data
             1, 1, 1,       // mat.emission_col
             1            // mat.emission_str

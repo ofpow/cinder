@@ -34,10 +34,16 @@ bool sphere_hit(Sphere s, Ray r, float t_min, float t_max, inout hit_record rec)
     return false;
 }
 
-Sphere hitable_sphere(float data[9]) {
+Sphere hitable_sphere(float data[13]) {
     return Sphere(
             vec3(data[0], -data[1], data[2]),
             data[3],
-            Material(uint(data[4]), vec3(data[5], data[6], data[7]), data[8])
+            Material(
+                uint(data[4]),
+                vec3(data[5], data[6], data[7]), 
+                data[8],
+                vec3(data[9], data[10], data[11]),
+                data[12]
+            )
         );
 }

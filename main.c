@@ -33,7 +33,7 @@
 
 typedef struct Hitable {
     unsigned int type;
-    float data[9];
+    float data[13];
 } Hitable;
 
 define_array(Hitables, Hitable);
@@ -51,7 +51,10 @@ Hitables setup_world(void) {
             0, -1000, -2,     // center
             1000,          // radius
             LAMBERTIAN,   // mat.type
-            0.5, 0.5, 0.5 // mat.albedo
+            0.5, 0.5, 0.5,// mat.albedo
+            0,            // mat.data
+            1, 1, 1,       // mat.emission_col
+            0            // mat.emission_str
         }
     }));
     append(hitables, ((Hitable){
@@ -60,7 +63,10 @@ Hitables setup_world(void) {
             0, 1, 0,     // center
             1,          // radius
             LAMBERTIAN,   // mat.type
-            0.4, 0.2, 0.1 // mat.albedo
+            0.4, 0.2, 0.1,// mat.albedo
+            0,            // mat.data
+            1, 1, 1,       // mat.emission_col
+            1            // mat.emission_str
         }
     }));
     append(hitables, ((Hitable){
@@ -69,8 +75,10 @@ Hitables setup_world(void) {
             4, 1, 0,     // center
             1,          // radius
             METAL,   // mat.type
-            0.7, 0.6, 0.5,
-            0
+            0.7, 0.6, 0.5, // mat.albedo
+            0.0,          // mat.data
+            0, 0, 0,       // mat.emission_col
+            0            // mat.emission_str
         }
     }));
     append(hitables, ((Hitable){
@@ -79,8 +87,10 @@ Hitables setup_world(void) {
             -4, 1, 0,     // center
             1,          // radius
             DIELECTRIC,   // mat.type
-            0.7, 0.6, 0.5,
-            1.5
+            0, 0, 0,    //mat.albedo
+            1.5,         //mat.data
+            0, 0, 0,     // mat.emission_col
+            0            // mat.emission_str
         }
     }));
     

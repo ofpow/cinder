@@ -9,13 +9,16 @@ uniform int Y;
 
 const float FLT_MAX = 3.40282347e+38;
 vec3 color(Ray r) {
+    vec3 light = vec3(0);
     vec3 final_color = vec3(1.0);
-    for (int i = 0; i < 3; ++i) {
-        hit_record rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0), 0));
+    for (int i = 0; i < 4; ++i) {
+        hit_record rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0), 0, vec3(0), 0));
         if (hit(r, 0.001, FLT_MAX, rec)) {
             vec3 attenuation = vec3(0);
             Ray scattered = Ray(vec3(0), vec3(0));
             if (scatter(rec.mat, r, rec, attenuation, scattered)) {
+                vec3 emitted_light = rec.mat.emission_col * rec.mat.emission_str;
+                light += emitted_light * final_color;
                 final_color *= attenuation;
                 r = scattered;
             } else {
@@ -23,12 +26,13 @@ vec3 color(Ray r) {
             }
         } else {
             vec3 unit_dir = normalize(r.direction);
-            float t = 0.5 * (unit_dir.y + 1.0);
+            float t = 0.5 * (-unit_dir.y + 1.0);
             vec3 col = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
-            return final_color * col;
+            light += col*final_color;
+            break;
         }
     }
-    return final_color;
+    return light;
 }
 
 uniform int rand_seed;

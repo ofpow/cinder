@@ -1,8 +1,9 @@
 #define SPHERE 1
+#define TRIANGLE 2
 
 struct Hitable {
     uint type;
-    float data[13];
+    float data[18];
 };
 
 layout(std430, binding = 2) restrict buffer Hitables {
@@ -21,6 +22,9 @@ bool hit(Ray r, float t_min, float t_max, inout hit_record rec) {
             case SPHERE: 
                 Sphere s = hitable_sphere(hitables[i].data);
                 result = sphere_hit(s, r, t_min, closest_so_far, temp_rec); break;
+            case TRIANGLE:
+                Triangle t = hitable_triangle(hitables[i].data);
+                result = triangle_hit(t, r, t_min, closest_so_far, temp_rec); break;
             default:
                 return false;
         }

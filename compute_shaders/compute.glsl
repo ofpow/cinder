@@ -49,11 +49,11 @@ void main() {
     rand_state = hash(gl_GlobalInvocationID.xy);
     rand_state = hash(uvec2(rand_state, rand_seed));
     
-    vec3 lookfrom = vec3(13, 2, 3);
-    vec3 lookat = vec3(0, 0, 0);
+    vec3 lookfrom = vec3(0, 0, 2);
+    vec3 lookat = vec3(0, 0, -1);
     float dist_to_focus = length(lookfrom-lookat);
     float aperture = 0.0;
-    init_camera(lookfrom, lookat, vec3(0, 1, 0), 20, float(X)/float(Y), aperture, dist_to_focus);
+    init_camera(lookfrom, lookat, vec3(0, 1, 0), 90, float(X)/float(Y), aperture, dist_to_focus);
 
     int aa_steps = 1;
     vec3 col = vec3(0);

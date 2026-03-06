@@ -43,6 +43,8 @@ uint hash(uvec2 p) {
     return h32^(h32 >> 16);
 }
 
+uniform int reset;
+
 void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
@@ -64,6 +66,7 @@ void main() {
         col += color(ray);
     }
     vec4 current = buf[x + y*X];
+    if (reset == 1) current = vec4(0);
 
     vec3 c = max(col / float(aa_steps), vec3(0));
     vec3 new_color = current.xyz + sqrt(c);

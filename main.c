@@ -2,6 +2,9 @@
 #include <raymath.h>
 #include <rlgl.h>
 
+#define RAYLIB_NUKLEAR_IMPLEMENTATION
+#include "raylib-nuklear.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -23,7 +26,15 @@
         int64_t capacity;          \
     } _name                        \
 
-#define SCALE (2048 / X)
+unsigned int screen_ssbo;
+unsigned int world_ssbo;
+
+unsigned int compute_shader;
+unsigned int compute_program;
+
+#define SCALE (3072 / X)
+const int X = 768;
+const int Y = X/2;
 
 #define SPHERE 1
 #define TRIANGLE 2
@@ -39,36 +50,44 @@ typedef struct Hitable {
 
 define_array(Hitables, Hitable);
 
+#include "gui.h"
+
+void handle_output(void) {
+    if (IsKeyPressed(KEY_O)) {
+        printf("outputting\n");
+        Vector4 *buf = calloc(X*Y, sizeof(Vector4));
+        rlReadShaderBuffer(screen_ssbo, buf, X*Y*sizeof(Vector4), 0);
+        FILE *f = fopen("out.ppm", "w");
+
+        fprintf(f, "P3\n");
+        fprintf(f, "%d %d\n", X, Y);
+        fprintf(f, "255\n");
+
+        for (int i = 0; i < X*Y; i++) {
+            Vector4 col = buf[i];
+            fprintf(f, "%d %d %d\n", (int)(255.99*col.x/col.w), (int)(255.99*col.y/col.w), (int)(255.99*col.z/col.w));
+        }
+        free(buf);
+        printf("output done\n");
+    }
+}
+
 Hitables setup_world(void) {
     Hitables hitables = (Hitables){
         calloc(10, sizeof(Hitable)),
         0,
         10
     };
-
+    
     append(hitables, ((Hitable){
-        .type = TRIANGLE,
+        .type = SPHERE,
         .data = {
-            0, 0, -1,     // a
-            0, 1, -1,     // b
-            1, 1, -1,     // c
+            0, 0, -1,     // center
+            1,          // radius
             LAMBERTIAN,   // mat.type
-            0, 0, 1,// mat.albedo
-            0,            // mat.data
-            0, 0, 0,       // mat.emission_col
-            0            // mat.emission_str
-        }
-    }));
-    append(hitables, ((Hitable){
-        .type = TRIANGLE,
-        .data = {
-            1, 0, -1,     // a
-            0, 0, -1,     // b
-            1, 1, -1,     // c
-            LAMBERTIAN,   // mat.type
-            1, 0, 0,// mat.albedo
-            0,            // mat.data
-            0, 0, 0,       // mat.emission_col
+            1, 0, 0,    //mat.albedo
+            0,         //mat.data
+            0, 0, 0,     // mat.emission_col
             0            // mat.emission_str
         }
     }));
@@ -104,8 +123,7 @@ char *assemble_compute_shader(void) {
 }
 
 int main(void) {
-    const int X = 1024;
-    const int Y = X/2;
+    struct nk_context *ctx = InitNuklear(30);
 
     const Vector2 resolution = { (float)X, (float)Y };
 
@@ -115,8 +133,8 @@ int main(void) {
     char *compute_code = assemble_compute_shader();
     //printf("%s\n", compute_code);
 
-    unsigned int compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
-    unsigned int compute_program = rlLoadComputeShaderProgram(compute_shader);
+    compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
+    compute_program = rlLoadComputeShaderProgram(compute_shader);
     
     Hitables hitables = setup_world();
 
@@ -132,43 +150,43 @@ int main(void) {
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "resolution"), &resolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 
-    unsigned int screen = rlLoadShaderBuffer(X*Y*sizeof(Vector4), NULL, RL_DYNAMIC_COPY);
-    unsigned int world = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
+    screen_ssbo = rlLoadShaderBuffer(X*Y*sizeof(Vector4), NULL, RL_DYNAMIC_COPY);
+    world_ssbo = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
 
     Image img = GenImageColor(X, Y, WHITE);
     Texture tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
     int frame = 1;
+    int reset = 0;
+    
+    Vector3 center = {hitables.data[0].data[0], hitables.data[0].data[1], hitables.data[0].data[2]};
+    float radius = 1;
+    int mat_type = 0;
 
     while (!WindowShouldClose()) {
 
-        if (IsKeyPressed(KEY_O)) {
-            printf("outputting\n");
-            Vector4 *buf = calloc(X*Y, sizeof(Vector4));
-            rlReadShaderBuffer(screen, buf, X*Y*sizeof(Vector4), 0);
-            FILE *f = fopen("out.ppm", "w");
+        UpdateNuklear(ctx);
+        
+        reset = sphere_gui(ctx, &hitables.data[0]);
 
-            fprintf(f, "P3\n");
-            fprintf(f, "%d %d\n", X, Y);
-            fprintf(f, "255\n");
-
-            for (int i = 0; i < X*Y; i++) {
-                Vector4 col = buf[i];
-                fprintf(f, "%d %d %d\n", (int)(255.99*col.x/col.w), (int)(255.99*col.y/col.w), (int)(255.99*col.z/col.w));
-            }
-            free(buf);
-            printf("output done\n");
-        }
+        nk_end(ctx);
+        handle_output();
 
         frame++;
 
         rlEnableShader(compute_program);
-        rlBindShaderBuffer(screen, 1);
-        rlBindShaderBuffer(world, 2);
+        if (reset == 1) {
+            world_ssbo = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
+        }
+        rlBindShaderBuffer(screen_ssbo, 1);
+        rlBindShaderBuffer(world_ssbo, 2);
+        rlSetUniform(rlGetLocationUniform(compute_program, "reset"), &reset, RL_SHADER_UNIFORM_INT, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
         rlComputeShaderDispatch(X/16, Y/16, 1);
         rlDisableShader();
+
+        if (reset == 1) reset = 0;
 
         BeginDrawing();
         BeginShaderMode(frag_shader);
@@ -180,22 +198,26 @@ int main(void) {
             0.0f,
             WHITE
         );
+
         EndShaderMode();
 
         DrawFPS(GetScreenWidth() - 100, 10);
 
         printf("%f\n", GetFrameTime() * 1000);
 
+        DrawNuklear(ctx);
+    
         EndDrawing();
     }
 
-    rlUnloadShaderBuffer(screen);
-    rlUnloadShaderBuffer(world);
+    rlUnloadShaderBuffer(screen_ssbo);
+    rlUnloadShaderBuffer(world_ssbo);
 
     rlUnloadShaderProgram(compute_program);
 
     UnloadTexture(tex);
-    UnloadShader(frag_shader);
+    UnloadShader(frag_shader);  
+    UnloadNuklear(ctx);
 
     CloseWindow();
 

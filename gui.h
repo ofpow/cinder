@@ -1,95 +1,112 @@
 const char *material_types[] = {"Lambertian", "Metal", "Dielectric"};
 
+bool vec3_editor(Vector3 *v, struct nk_context *ctx, float min, float max, float inc) {
+    Vector3 new_v = *v;
+
+    nk_layout_row_dynamic(ctx, 60, 3);
+    nk_property_float(ctx, "X:", min, &new_v.x, max, inc, inc);
+    nk_property_float(ctx, "Y:", min, &new_v.y, max, inc, inc);
+    nk_property_float(ctx, "Z:", min, &new_v.z, max, inc, inc);
+
+    if (!Vector3Equals(new_v, *v)) {
+        v->x = new_v.x;
+        v->y = new_v.y;
+        v->z = new_v.z;
+        return true;
+    }
+    return false;
+}
+
+bool float_editor(float *f, struct nk_context *ctx, char *text, float min, float max, float inc) {
+    float new_f = *f;
+
+    nk_layout_row_dynamic(ctx, 60, 1);
+    nk_property_float(ctx, text, min, &new_f, max, inc, inc);
+    
+    if (*f != new_f) {
+        *f = new_f;
+        return true;
+    }
+    return false;
+}
+
+bool vec3_color_editor(Vector3 *c, struct nk_context *ctx) {
+    struct nk_colorf color = {c->x, c->y, c->z, 0};
+    nk_layout_row_dynamic(ctx, 120, 1);
+    struct nk_colorf new_c = nk_color_picker(ctx, color, NK_RGB);
+    struct nk_color new_c_255 = nk_rgb_cf(new_c);
+    nk_layout_row_dynamic(ctx, 30, 3);
+    new_c_255.r = nk_propertyi(ctx, "R:", 0, new_c_255.r, 255, 1, 1);
+    new_c_255.g = nk_propertyi(ctx, "G:", 0, new_c_255.g, 255, 1, 1);
+    new_c_255.b = nk_propertyi(ctx, "B:", 0, new_c_255.b, 255, 1, 1);
+    new_c = nk_color_cf(new_c_255);
+
+    if (!Vector3Equals(*c, (Vector3){new_c.r, new_c.g, new_c.b})) {
+        c->x = new_c.r;
+        c->y = new_c.g;
+        c->z = new_c.b;
+        return true;
+    }
+    return false;
+}
+
 bool sphere_gui(struct nk_context* ctx, Hitable *h) {
     bool reset = false;
 
     Vector3 center = {h->data[0], h->data[1], h->data[2]};
     float radius = h->data[3];
     int material_type = h->data[4] - 1;
-    struct nk_colorf albedo = {h->data[5], h->data[6], h->data[7], 0};
+    Vector3 albedo = {h->data[5], h->data[6], h->data[7]};
     float data = h->data[8];
-    struct nk_colorf emission_col = {h->data[9], h->data[10], h->data[11], 0};
+    Vector3 emission_col = {h->data[9], h->data[10], h->data[11]};
     float emission_str = h->data[12];
 
     if (nk_begin(ctx, "Sphere", nk_rect(100, 100, 500, 700),
         NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
-        Vector3 new_center = center;
-        float new_radius = radius;
-        float new_data = data;
-        float new_emission_str = emission_str;
 
-        nk_layout_row_dynamic(ctx, 60, 3);
-        nk_property_float(ctx, "X:", -100, &new_center.x, 100, 0.01, 0.01);
-        nk_property_float(ctx, "Y:", -100, &new_center.y, 100, 0.01, 0.01);
-        nk_property_float(ctx, "Z:", -100, &new_center.z, 100, 0.01, 0.01);
+        if (vec3_editor(&center, ctx, -100, 100, 0.01)) {
+            h->data[0] = center.x; 
+            h->data[1] = center.y; 
+            h->data[2] = center.z; 
+            reset = true;
+        }
 
-        nk_layout_row_dynamic(ctx, 60, 1);
-        nk_property_float(ctx, "Radius:", -100, &new_radius, 100, 0.01, 0.01);
+        if (float_editor(&radius, ctx, "Radius:", -100, 100, 0.01)) {
+            h->data[3] = radius;
+            reset = true;
+        }
 
         nk_layout_row_dynamic(ctx, 60, 1);
         int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
-
-        nk_layout_row_dynamic(ctx, 120, 1);
-        struct nk_colorf new_albedo = nk_color_picker(ctx, albedo, NK_RGB);
-        struct nk_color a = nk_rgb_cf(new_albedo);
-        nk_layout_row_dynamic(ctx, 30, 3);
-        a.r = nk_propertyi(ctx, "R:", 0, a.r, 255, 1, 1);
-        a.g = nk_propertyi(ctx, "G:", 0, a.g, 255, 1, 1);
-        a.b = nk_propertyi(ctx, "B:", 0, a.b, 255, 1, 1);
-        new_albedo = nk_color_cf(a);
-
-        nk_layout_row_dynamic(ctx, 60, 1);
-        nk_property_float(ctx, "Mat Data:", -100, &new_data, 100, 0.01, 0.01);
-
-        nk_layout_row_dynamic(ctx, 120, 1);
-        struct nk_colorf new_emission_col = nk_color_picker(ctx, emission_col, NK_RGB);
-        struct nk_color e = nk_rgb_cf(new_emission_col);
-        nk_layout_row_dynamic(ctx, 30, 3);
-        e.r = nk_propertyi(ctx, "R:", 0, e.r, 255, 1, 1);
-        e.g = nk_propertyi(ctx, "G:", 0, e.g, 255, 1, 1);
-        e.b = nk_propertyi(ctx, "B:", 0, e.b, 255, 1, 1);
-        new_emission_col = nk_color_cf(e);
-
-        nk_layout_row_dynamic(ctx, 60, 1);
-        nk_property_float(ctx, "Emit str:", -100, &new_emission_str, 100, 0.01, 0.01);
-        
-        if (!Vector3Equals(center, new_center)) {
-            reset = true;
-            center = new_center;
-            h->data[0] = center.x;
-            h->data[1] = center.y;
-            h->data[2] = center.z;
-        }
-        if (new_radius != radius) {
-            reset = true;
-            h->data[3] = new_radius;
-        }
         if (new_material_type != material_type) {
             reset = true;
             h->data[4] = new_material_type + 1;
         }
-        if (new_albedo.r != albedo.r || new_albedo.g != albedo.g || new_albedo.b != albedo.b) {
+
+        if (vec3_color_editor(&albedo, ctx)) {
             reset = true;
-            h->data[5] = new_albedo.r;
-            h->data[6] = new_albedo.g;
-            h->data[7] = new_albedo.b;
+            h->data[5] = albedo.x;
+            h->data[6] = albedo.y;
+            h->data[7] = albedo.z;
         }
-        if (new_data != data) {
+
+        if (float_editor(&data, ctx, "Mat data:", -100, 100, 0.01)) {
+            h->data[8] = data;
             reset = true;
-            h->data[8] = new_data;
         }
-        if (new_emission_col.r != emission_col.r ||
-            new_emission_col.g != emission_col.g || 
-            new_emission_col.b != emission_col.b) {
+
+        if (vec3_color_editor(&emission_col, ctx)) {
             reset = true;
-            h->data[9] = new_emission_col.r;
-            h->data[10] = new_emission_col.g;
-            h->data[11] = new_emission_col.b;
+            h->data[9] = emission_col.x;
+            h->data[10] = emission_col.y;
+            h->data[11] = emission_col.z;
         }
-        if (new_emission_str != emission_str) {
+
+        if (float_editor(&emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
+            h->data[12] = emission_str;
             reset = true;
-            h->data[12] = new_emission_str;
         }
+        
     }
     return reset;
 }

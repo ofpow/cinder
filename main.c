@@ -165,15 +165,9 @@ int main(void) {
     int mat_type = 0;
 
     while (!WindowShouldClose()) {
-
-        UpdateNuklear(ctx);
-        
-        reset = sphere_gui(ctx, &hitables.data[0]);
-
-        nk_end(ctx);
-        handle_output();
-
         frame++;
+
+        handle_output();
 
         rlEnableShader(compute_program);
         if (reset == 1) {
@@ -205,6 +199,11 @@ int main(void) {
 
         printf("%f\n", GetFrameTime() * 1000);
 
+        UpdateNuklear(ctx);
+        
+        reset = sphere_gui(ctx, &hitables.data[0]);
+
+        nk_end(ctx);
         DrawNuklear(ctx);
     
         EndDrawing();

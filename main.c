@@ -177,6 +177,8 @@ int main(void) {
     Vector3 lookat = {0, 0, -1};
     float aperture = 0.0;
 
+    bool show_gui = false;
+
     while (!WindowShouldClose()) {
         frame++;
 
@@ -215,14 +217,16 @@ int main(void) {
 
         printf("%f\n", GetFrameTime() * 1000);
 
-        UpdateNuklear(ctx);
-        
-        reset |= sphere_gui(ctx, &hitables.data[0]);
-        reset |= triangle_gui(ctx, &hitables.data[0]);
+        if (IsKeyPressed(KEY_G)) show_gui = !show_gui;
+        if (show_gui) {
+            UpdateNuklear(ctx);
+            reset |= sphere_gui(ctx, &hitables.data[0]);
+            reset |= triangle_gui(ctx, &hitables.data[0]);
 
-        reset |= camera_gui(ctx, &lookfrom, &lookat, &aperture);
+            reset |= camera_gui(ctx, &lookfrom, &lookat, &aperture);
 
-        DrawNuklear(ctx);
+            DrawNuklear(ctx);
+        }
     
         EndDrawing();
     }

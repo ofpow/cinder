@@ -80,14 +80,28 @@ Hitables setup_world(void) {
     };
     
     append(hitables, ((Hitable){
-        .type = SPHERE,
+        .type = TRIANGLE,
         .data = {
-            0, 0, -1,     // center
-            1,          // radius
+            0, 0, -1,     // a
+            0, 1, -1,     // b
+            1, 1, -1,     // c
             LAMBERTIAN,   // mat.type
-            1, 0, 0,    //mat.albedo
-            0,         //mat.data
-            0, 0, 0,     // mat.emission_col
+            0, 0, 1,// mat.albedo
+            0,            // mat.data
+            0, 0, 0,       // mat.emission_col
+            0            // mat.emission_str
+        }
+    }));
+    append(hitables, ((Hitable){
+        .type = TRIANGLE,
+        .data = {
+            1, 0, -1,     // a
+            0, 0, -1,     // b
+            1, 1, -1,     // c
+            LAMBERTIAN,   // mat.type
+            1, 0, 0,// mat.albedo
+            0,            // mat.data
+            0, 0, 0,       // mat.emission_col
             0            // mat.emission_str
         }
     }));
@@ -201,9 +215,9 @@ int main(void) {
 
         UpdateNuklear(ctx);
         
-        reset = sphere_gui(ctx, &hitables.data[0]);
+        reset |= sphere_gui(ctx, &hitables.data[0]);
+        reset |= triangle_gui(ctx, &hitables.data[0]);
 
-        nk_end(ctx);
         DrawNuklear(ctx);
     
         EndDrawing();

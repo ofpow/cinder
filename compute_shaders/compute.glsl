@@ -48,6 +48,7 @@ uniform int reset;
 uniform vec3 lookfrom;
 uniform vec3 lookat;
 uniform float aperture;
+uniform int vfov;
 
 void main() {
     uint x = gl_GlobalInvocationID.x;
@@ -56,7 +57,7 @@ void main() {
     rand_state = hash(uvec2(rand_state, rand_seed));
     
     float dist_to_focus = length(lookfrom-lookat);
-    init_camera(lookfrom, lookat, vec3(0, 1, 0), 90, float(X)/float(Y), aperture, dist_to_focus);
+    init_camera(lookfrom, lookat, vec3(0, 1, 0), vfov, float(X)/float(Y), aperture, dist_to_focus);
 
     int aa_steps = 1;
     vec3 col = vec3(0);

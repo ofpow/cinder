@@ -30,6 +30,19 @@ bool float_editor(float *f, struct nk_context *ctx, char *text, float min, float
     return false;
 }
 
+bool int_editor(int *i, struct nk_context *ctx, char *text, float min, float max, float inc) {
+    int new_i = *i;
+
+    nk_layout_row_dynamic(ctx, 60, 1);
+    nk_property_int(ctx, text, min, &new_i, max, inc, inc);
+    
+    if (*i != new_i) {
+        *i = new_i;
+        return true;
+    }
+    return false;
+}
+
 bool vec3_color_editor(Vector3 *c, struct nk_context *ctx) {
     struct nk_colorf color = {c->x, c->y, c->z, 0};
     nk_layout_row_dynamic(ctx, 120, 1);
@@ -161,7 +174,7 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     return reset;
 }
 
-bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, float *aperture) {
+bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, float *aperture, int *vfov) {
     bool reset = false;
     if (nk_begin(ctx, "Camera", nk_rect(0, 870, 600, 770),
         NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
@@ -172,6 +185,9 @@ bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, floa
             reset = true;
         }
         if (float_editor(aperture, ctx, "Aperture:", -100, 100, 0.01)) {
+            reset = true;
+        }
+        if (int_editor(vfov, ctx, "FOV:", -360, 360, 1)) {
             reset = true;
         }
     }

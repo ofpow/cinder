@@ -80,6 +80,18 @@ Hitables setup_world(void) {
     };
     
     append(hitables, ((Hitable){
+        .type = SPHERE,
+        .data = {
+            2, 0, -1,     // a
+            0.5,
+            LAMBERTIAN,   // mat.type
+            0, 1, 0,// mat.albedo
+            0,            // mat.data
+            0, 0, 0,       // mat.emission_col
+            0            // mat.emission_str
+        }
+    }));
+    append(hitables, ((Hitable){
         .type = TRIANGLE,
         .data = {
             0, 0, -1,     // a
@@ -176,8 +188,9 @@ int main(void) {
     Vector3 lookfrom = {0, 0, 2};
     Vector3 lookat = {0, 0, -1};
     float aperture = 0.0;
+    int selected_index = 0;
 
-    bool show_gui = false;
+    bool show_gui = true;
 
     while (!WindowShouldClose()) {
         frame++;
@@ -215,15 +228,11 @@ int main(void) {
 
         DrawFPS(GetScreenWidth() - 100, 10);
 
-        printf("%f\n", GetFrameTime() * 1000);
-
         if (IsKeyPressed(KEY_G)) show_gui = !show_gui;
         if (show_gui) {
             UpdateNuklear(ctx);
-            reset |= sphere_gui(ctx, &hitables.data[0]);
-            reset |= triangle_gui(ctx, &hitables.data[0]);
-
             reset |= camera_gui(ctx, &lookfrom, &lookat, &aperture);
+            reset |= object_editor(ctx, &selected_index, hitables);
 
             DrawNuklear(ctx);
         }

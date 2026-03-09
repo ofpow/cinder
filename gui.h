@@ -36,9 +36,9 @@ bool vec3_color_editor(Vector3 *c, struct nk_context *ctx) {
     struct nk_colorf new_c = nk_color_picker(ctx, color, NK_RGB);
     struct nk_color new_c_255 = nk_rgb_cf(new_c);
     nk_layout_row_dynamic(ctx, 30, 3);
-    new_c_255.r = nk_propertyi(ctx, "R:", 0, new_c_255.r, 255, 1, 1);
-    new_c_255.g = nk_propertyi(ctx, "G:", 0, new_c_255.g, 255, 1, 1);
-    new_c_255.b = nk_propertyi(ctx, "B:", 0, new_c_255.b, 255, 1, 1);
+    new_c_255.r = nk_propertyi(ctx, "#R:", 0, new_c_255.r, 255, 1, 1);
+    new_c_255.g = nk_propertyi(ctx, "#G:", 0, new_c_255.g, 255, 1, 1);
+    new_c_255.b = nk_propertyi(ctx, "#B:", 0, new_c_255.b, 255, 1, 1);
     new_c = nk_color_cf(new_c_255);
 
     if (!Vector3Equals(*c, (Vector3){new_c.r, new_c.g, new_c.b})) {
@@ -51,7 +51,6 @@ bool vec3_color_editor(Vector3 *c, struct nk_context *ctx) {
 }
 
 bool sphere_gui(struct nk_context* ctx, Hitable *h) {
-    if (h->type != SPHERE) return false;
     bool reset = false;
 
     Vector3 center = {h->data[0], h->data[1], h->data[2]};
@@ -62,59 +61,47 @@ bool sphere_gui(struct nk_context* ctx, Hitable *h) {
     Vector3 emission_col = {h->data[9], h->data[10], h->data[11]};
     float emission_str = h->data[12];
 
-    if (nk_begin(ctx, "Sphere", nk_rect(0, 0, 600, 700),
-        NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
-
-        if (vec3_editor(&center, ctx, -100, 100, 0.01)) {
-            h->data[0] = center.x; 
-            h->data[1] = center.y; 
-            h->data[2] = center.z; 
-            reset = true;
-        }
-
-        if (float_editor(&radius, ctx, "Radius:", -100, 100, 0.01)) {
-            h->data[3] = radius;
-            reset = true;
-        }
-
-        nk_layout_row_dynamic(ctx, 60, 1);
-        int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
-        if (new_material_type != material_type) {
-            reset = true;
-            h->data[4] = new_material_type + 1;
-        }
-
-        if (vec3_color_editor(&albedo, ctx)) {
-            reset = true;
-            h->data[5] = albedo.x;
-            h->data[6] = albedo.y;
-            h->data[7] = albedo.z;
-        }
-
-        if (float_editor(&data, ctx, "Mat data:", -100, 100, 0.01)) {
-            h->data[8] = data;
-            reset = true;
-        }
-
-        if (vec3_color_editor(&emission_col, ctx)) {
-            reset = true;
-            h->data[9] = emission_col.x;
-            h->data[10] = emission_col.y;
-            h->data[11] = emission_col.z;
-        }
-
-        if (float_editor(&emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
-            h->data[12] = emission_str;
-            reset = true;
-        }
-        
+    if (vec3_editor(&center, ctx, -100, 100, 0.01)) {
+        h->data[0] = center.x; 
+        h->data[1] = center.y; 
+        h->data[2] = center.z; 
+        reset = true;
     }
-    nk_end(ctx);
+    if (float_editor(&radius, ctx, "Radius:", -100, 100, 0.01)) {
+        h->data[3] = radius;
+        reset = true;
+    }
+    nk_layout_row_dynamic(ctx, 60, 1);
+    int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
+    if (new_material_type != material_type) {
+        reset = true;
+        h->data[4] = new_material_type + 1;
+    }
+    if (vec3_color_editor(&albedo, ctx)) {
+        reset = true;
+        h->data[5] = albedo.x;
+        h->data[6] = albedo.y;
+        h->data[7] = albedo.z;
+    }
+    if (float_editor(&data, ctx, "Mat data:", -100, 100, 0.01)) {
+        h->data[8] = data;
+        reset = true;
+    }
+    if (vec3_color_editor(&emission_col, ctx)) {
+        reset = true;
+        h->data[9] = emission_col.x;
+        h->data[10] = emission_col.y;
+        h->data[11] = emission_col.z;
+    }
+    if (float_editor(&emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
+        h->data[12] = emission_str;
+        reset = true;
+    }
+        
     return reset;
 }
 
 bool triangle_gui(struct nk_context *ctx, Hitable *h) {
-    if (h->type != TRIANGLE) return false;
     bool reset = false;
 
     Vector3 a = {h->data[0], h->data[1], h->data[2]};
@@ -126,61 +113,57 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     Vector3 emission_col = {h->data[14], h->data[15], h->data[16]};
     float emission_str = h->data[17];
 
-    if (nk_begin(ctx, "Triangle", nk_rect(0, 700, 600, 770),
-        NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
-        if (vec3_editor(&a, ctx, -100, 100, 0.01)) {
-            h->data[0] = a.x; 
-            h->data[1] = a.y; 
-            h->data[2] = a.z; 
-            reset = true;
-        }
-        if (vec3_editor(&b, ctx, -100, 100, 0.01)) {
-            h->data[3] = b.x; 
-            h->data[4] = b.y; 
-            h->data[5] = b.z; 
-            reset = true;
-        }
-        if (vec3_editor(&c, ctx, -100, 100, 0.01)) {
-            h->data[6] = c.x; 
-            h->data[7] = c.y; 
-            h->data[8] = c.z; 
-            reset = true;
-        }
-        nk_layout_row_dynamic(ctx, 60, 1);
-        int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
-        if (new_material_type != material_type) {
-            h->data[9] = new_material_type + 1;
-            reset = true;
-        }
-        if (vec3_color_editor(&albedo, ctx)) {
-            h->data[10] = albedo.x;
-            h->data[11] = albedo.y;
-            h->data[12] = albedo.z;
-            reset = true;
-        }
-        if (float_editor(&data, ctx, "Mat data:", -100, 100, 0.01)) {
-            h->data[13] = data;
-            reset = true;
-        }
-        if (vec3_color_editor(&emission_col, ctx)) {
-            h->data[14] = emission_col.x;
-            h->data[15] = emission_col.y;
-            h->data[16] = emission_col.z;
-            reset = true;
-        }
-        if (float_editor(&emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
-            h->data[17] = emission_str;
-            reset = true;
-        }
+    if (vec3_editor(&a, ctx, -100, 100, 0.01)) {
+        h->data[0] = a.x; 
+        h->data[1] = a.y; 
+        h->data[2] = a.z; 
+        reset = true;
     }
-    nk_end(ctx);
+    if (vec3_editor(&b, ctx, -100, 100, 0.01)) {
+        h->data[3] = b.x; 
+        h->data[4] = b.y; 
+        h->data[5] = b.z; 
+        reset = true;
+    }
+    if (vec3_editor(&c, ctx, -100, 100, 0.01)) {
+        h->data[6] = c.x; 
+        h->data[7] = c.y; 
+        h->data[8] = c.z; 
+        reset = true;
+    }
+    nk_layout_row_dynamic(ctx, 60, 1);
+    int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
+    if (new_material_type != material_type) {
+        h->data[9] = new_material_type + 1;
+        reset = true;
+    }
+    if (vec3_color_editor(&albedo, ctx)) {
+        h->data[10] = albedo.x;
+        h->data[11] = albedo.y;
+        h->data[12] = albedo.z;
+        reset = true;
+    }
+    if (float_editor(&data, ctx, "Mat data:", -100, 100, 0.01)) {
+        h->data[13] = data;
+        reset = true;
+    }
+    if (vec3_color_editor(&emission_col, ctx)) {
+        h->data[14] = emission_col.x;
+        h->data[15] = emission_col.y;
+        h->data[16] = emission_col.z;
+        reset = true;
+    }
+    if (float_editor(&emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
+        h->data[17] = emission_str;
+        reset = true;
+    }
+
     return reset;
 }
 
-
 bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, float *aperture) {
     bool reset = false;
-    if (nk_begin(ctx, "Camera", nk_rect(2400, 0, 600, 770),
+    if (nk_begin(ctx, "Camera", nk_rect(0, 870, 600, 770),
         NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
         if (vec3_editor(lookfrom, ctx, -100, 100, 0.01)) {
             reset = true;
@@ -191,6 +174,35 @@ bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, floa
         if (float_editor(aperture, ctx, "Aperture:", -100, 100, 0.01)) {
             reset = true;
         }
+    }
+    nk_end(ctx);
+    return reset;
+}
+
+bool object_editor(struct nk_context *ctx, int *selected_index, Hitables world) {
+    bool reset = false;
+    if (nk_begin(ctx, "Object Editor", nk_rect(0, 0, 600, 870),
+             NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
+
+        nk_layout_row_dynamic(ctx, 60, 1);
+        int new_index = *selected_index;
+        nk_property_int(ctx, "Object id:", 0, &new_index, world.index - 1, 1, 0.5);
+        if (new_index != *selected_index) 
+            *selected_index = new_index;            
+
+        nk_layout_row_dynamic(ctx, 730, 1);
+
+        Hitable h = world.data[*selected_index];
+
+        if (h.type == SPHERE && nk_group_begin(ctx, "SPHERE", NK_WINDOW_BORDER)) {
+            reset |= sphere_gui(ctx, &h);
+            nk_group_end(ctx);
+        } else if (h.type == TRIANGLE && nk_group_begin(ctx, "TRIANGLE", NK_WINDOW_BORDER)) {
+            reset |= triangle_gui(ctx, &h);
+            nk_group_end(ctx);
+        }
+
+        world.data[*selected_index] = h;
     }
     nk_end(ctx);
     return reset;

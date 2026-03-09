@@ -173,10 +173,9 @@ int main(void) {
 
     int frame = 1;
     int reset = 0;
-    
-    Vector3 center = {hitables.data[0].data[0], hitables.data[0].data[1], hitables.data[0].data[2]};
-    float radius = 1;
-    int mat_type = 0;
+    Vector3 lookfrom = {0, 0, 2};
+    Vector3 lookat = {0, 0, -1};
+    float aperture = 0.0;
 
     while (!WindowShouldClose()) {
         frame++;
@@ -191,6 +190,9 @@ int main(void) {
         rlBindShaderBuffer(world_ssbo, 2);
         rlSetUniform(rlGetLocationUniform(compute_program, "reset"), &reset, RL_SHADER_UNIFORM_INT, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
+        rlSetUniform(rlGetLocationUniform(compute_program, "lookfrom"), &lookfrom, RL_SHADER_UNIFORM_VEC3, 1);
+        rlSetUniform(rlGetLocationUniform(compute_program, "lookat"), &lookat, RL_SHADER_UNIFORM_VEC3, 1);
+        rlSetUniform(rlGetLocationUniform(compute_program, "aperture"), &aperture, RL_SHADER_UNIFORM_FLOAT, 1);
         rlComputeShaderDispatch(X/16, Y/16, 1);
         rlDisableShader();
 
@@ -217,6 +219,8 @@ int main(void) {
         
         reset |= sphere_gui(ctx, &hitables.data[0]);
         reset |= triangle_gui(ctx, &hitables.data[0]);
+
+        reset |= camera_gui(ctx, &lookfrom, &lookat, &aperture);
 
         DrawNuklear(ctx);
     

@@ -176,3 +176,22 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     nk_end(ctx);
     return reset;
 }
+
+
+bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, float *aperture) {
+    bool reset = false;
+    if (nk_begin(ctx, "Camera", nk_rect(2400, 0, 600, 770),
+        NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
+        if (vec3_editor(lookfrom, ctx, -100, 100, 0.01)) {
+            reset = true;
+        }
+        if (vec3_editor(lookat, ctx, -100, 100, 0.01)) {
+            reset = true;
+        }
+        if (float_editor(aperture, ctx, "Aperture:", -100, 100, 0.01)) {
+            reset = true;
+        }
+    }
+    nk_end(ctx);
+    return reset;
+}

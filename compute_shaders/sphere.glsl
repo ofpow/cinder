@@ -1,9 +1,3 @@
-struct Sphere {
-    vec3 center;
-    float radius;
-    Material mat;
-};
-
 bool sphere_hit(Sphere s, Ray r, float t_min, float t_max, inout hit_record rec) {
     vec3 oc = r.origin - s.center;
 

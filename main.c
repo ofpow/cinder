@@ -36,17 +36,7 @@ unsigned int compute_program;
 const int X = 768;
 const int Y = X/2;
 
-#define SPHERE 1
-#define TRIANGLE 2
-
-#define LAMBERTIAN 1
-#define METAL 2
-#define DIELECTRIC 3
-
-typedef struct Hitable {
-    unsigned int type;
-    float data[18];
-} Hitable;
+#include "shared/definitions.h"
 
 define_array(Hitables, Hitable);
 
@@ -127,9 +117,10 @@ char *assemble_compute_shader(void) {
     sprintf(compute_code, "%s", "#version 430\n");
 
     char *compute_includes[] = {
+        "compute_shaders/glsl.glsl",
+        "shared/definitions.h",
         "compute_shaders/ray.glsl",
         "compute_shaders/vec3.glsl", 
-        "compute_shaders/hitable.glsl", 
         "compute_shaders/sphere.glsl", 
         "compute_shaders/triangle.glsl", 
         "compute_shaders/hitablelist.glsl", 

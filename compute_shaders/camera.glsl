@@ -8,16 +8,6 @@ vec3 random_in_unit_disk() {
     return p;
 }
 
-struct Camera {
-    vec3 origin;
-    vec3 lower_left_corner;
-    vec3 horizontal;
-    vec3 vertical;
-
-    vec3 u, v, w;
-    float lens_radius;
-};
-
 Ray get_ray(Camera c, float u, float v) {
     vec3 rd = c.lens_radius * random_in_unit_disk();
     vec3 offst = c.u * rd.x + v * rd.y;

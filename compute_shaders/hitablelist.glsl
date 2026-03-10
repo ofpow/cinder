@@ -1,11 +1,3 @@
-#define SPHERE 1
-#define TRIANGLE 2
-
-struct Hitable {
-    uint type;
-    float data[18];
-};
-
 layout(std430, binding = 2) restrict buffer Hitables {
     Hitable hitables[];
 };

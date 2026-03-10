@@ -1,8 +1,3 @@
-struct Triangle {
-    vec3 a, b, c;
-    Material mat;
-};
-
 bool triangle_hit(Triangle t, Ray r, float t_min, float t_max, inout hit_record rec) {
     vec3 edge1 = t.b - t.a;
     vec3 edge2 = t.c - t.a;

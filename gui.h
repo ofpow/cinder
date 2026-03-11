@@ -174,7 +174,7 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     return reset;
 }
 
-bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, float *aperture, int *vfov) {
+bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, Vector3 *vup, float *aperture, int *vfov) {
     bool reset = false;
     if (nk_begin(ctx, "Camera", nk_rect(0, 870, 600, 770),
         NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
@@ -182,6 +182,9 @@ bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, floa
             reset = true;
         }
         if (vec3_editor(lookat, ctx, -100, 100, 0.01)) {
+            reset = true;
+        }
+        if (vec3_editor(vup, ctx, -100, 100, 0.01)) {
             reset = true;
         }
         if (float_editor(aperture, ctx, "Aperture:", -100, 100, 0.01)) {

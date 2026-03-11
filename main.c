@@ -178,6 +178,7 @@ int main(void) {
     int reset = 0;
     Vector3 lookfrom = {0, 0, 2};
     Vector3 lookat = {0, 0, -1};
+    Vector3 vup = {0, 1, 0};
     float aperture = 0.0;
     int vfov = 90;
     int selected_index = 0;
@@ -199,6 +200,7 @@ int main(void) {
         rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "lookfrom"), &lookfrom, RL_SHADER_UNIFORM_VEC3, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "lookat"), &lookat, RL_SHADER_UNIFORM_VEC3, 1);
+        rlSetUniform(rlGetLocationUniform(compute_program, "vup"), &vup, RL_SHADER_UNIFORM_VEC3, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "aperture"), &aperture, RL_SHADER_UNIFORM_FLOAT, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "vfov"), &vfov, RL_SHADER_UNIFORM_INT, 1);
         rlComputeShaderDispatch(X/16, Y/16, 1);
@@ -224,7 +226,7 @@ int main(void) {
         if (IsKeyPressed(KEY_G)) show_gui = !show_gui;
         if (show_gui) {
             UpdateNuklear(ctx);
-            reset |= camera_gui(ctx, &lookfrom, &lookat, &aperture, &vfov);
+            reset |= camera_gui(ctx, &lookfrom, &lookat, &vup, &aperture, &vfov);
             reset |= object_editor(ctx, &selected_index, hitables);
 
             DrawNuklear(ctx);

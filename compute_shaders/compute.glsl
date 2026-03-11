@@ -12,7 +12,7 @@ vec3 color(Ray r) {
     vec3 light = vec3(0);
     vec3 final_color = vec3(1.0);
     for (int i = 0; i < 4; ++i) {
-        hit_record rec = hit_record(0, vec3(0), vec3(0), Material(LAMBERTIAN, vec3(0), 0, vec3(0), 0));
+        hit_record rec = hit_record(0, vec3(0), vec3(0), MaterialData(LAMBERTIAN, vec3(0), 0, vec3(0), 0));
         if (hit(r, 0.001, FLT_MAX, rec)) {
             vec3 attenuation = vec3(0);
             Ray scattered = Ray(vec3(0), vec3(0));

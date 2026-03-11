@@ -42,7 +42,7 @@ Triangle hitable_triangle(float data[18]) {
             vec3(data[0], data[1], data[2]),
             vec3(data[3], data[4], data[5]),
             vec3(data[6], data[7], data[8]),
-            Material(
+            MaterialData(
                 uint(data[9]),
                 vec3(data[10], data[11], data[12]), 
                 data[13],

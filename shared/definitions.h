@@ -1,6 +1,7 @@
 #ifndef GLSL
 typedef Vector3 vec3;
 typedef struct Hitable Hitable;
+typedef struct MaterialData MaterialData;
 #endif
 
 #define LAMBERTIAN 1
@@ -10,8 +11,7 @@ typedef struct Hitable Hitable;
 #define SPHERE 1
 #define TRIANGLE 2
 
-#ifdef GLSL
-struct Material {
+struct MaterialData {
     uint type;
     vec3 albedo;
     float data;
@@ -19,6 +19,7 @@ struct Material {
     float emission_str;
 };
 
+#ifdef GLSL
 struct Ray {
     vec3 origin;
     vec3 direction;
@@ -29,18 +30,18 @@ struct hit_record {
     float t;
     vec3 p;
     vec3 normal;
-    Material mat;
+    MaterialData mat;
 };
 
 struct Sphere {
     vec3 center;
     float radius;
-    Material mat;
+    MaterialData mat;
 };
 
 struct Triangle {
     vec3 a, b, c;
-    Material mat;
+    MaterialData mat;
 };
 
 struct Hitable {

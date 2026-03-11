@@ -32,7 +32,7 @@ Sphere hitable_sphere(float data[18]) {
     return Sphere(
             vec3(data[0], -data[1], data[2]),
             data[3],
-            Material(
+            MaterialData(
                 uint(data[4]),
                 vec3(data[5], data[6], data[7]), 
                 data[8],

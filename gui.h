@@ -1,9 +1,10 @@
 const char *material_types[] = {"Lambertian", "Metal", "Dielectric"};
 
-bool vec3_editor(Vector3 *v, struct nk_context *ctx, float min, float max, float inc) {
+bool vec3_editor(Vector3 *v, char *name, struct nk_context *ctx, float min, float max, float inc) {
     Vector3 new_v = *v;
     
-    nk_layout_row_dynamic(ctx, 60, 3);
+    nk_layout_row_dynamic(ctx, 60, 4);
+    nk_label(ctx, name, NK_TEXT_LEFT | NK_TEXT_ALIGN_MIDDLE);
     nk_property_float(ctx, "#X:", min, &new_v.x, max, inc, inc);
     nk_property_float(ctx, "#Y:", min, &new_v.y, max, inc, inc);
     nk_property_float(ctx, "#Z:", min, &new_v.z, max, inc, inc);
@@ -74,7 +75,7 @@ bool sphere_gui(struct nk_context* ctx, Hitable *h) {
     Vector3 emission_col = {h->data[9], h->data[10], h->data[11]};
     float emission_str = h->data[12];
 
-    if (vec3_editor(&center, ctx, -100, 100, 0.01)) {
+    if (vec3_editor(&center, "Center:", ctx, -100, 100, 0.01)) {
         h->data[0] = center.x; 
         h->data[1] = center.y; 
         h->data[2] = center.z; 
@@ -126,19 +127,19 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     Vector3 emission_col = {h->data[14], h->data[15], h->data[16]};
     float emission_str = h->data[17];
 
-    if (vec3_editor(&a, ctx, -100, 100, 0.01)) {
+    if (vec3_editor(&a, "A:", ctx, -100, 100, 0.01)) {
         h->data[0] = a.x; 
         h->data[1] = a.y; 
         h->data[2] = a.z; 
         reset = true;
     }
-    if (vec3_editor(&b, ctx, -100, 100, 0.01)) {
+    if (vec3_editor(&b, "B:", ctx, -100, 100, 0.01)) {
         h->data[3] = b.x; 
         h->data[4] = b.y; 
         h->data[5] = b.z; 
         reset = true;
     }
-    if (vec3_editor(&c, ctx, -100, 100, 0.01)) {
+    if (vec3_editor(&c, "C:", ctx, -100, 100, 0.01)) {
         h->data[6] = c.x; 
         h->data[7] = c.y; 
         h->data[8] = c.z; 
@@ -176,15 +177,15 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
 
 bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, Vector3 *vup, float *aperture, int *vfov) {
     bool reset = false;
-    if (nk_begin(ctx, "Camera", nk_rect(0, 870, 600, 770),
+    if (nk_begin(ctx, "Camera", nk_rect(0, 870, 800, 770),
         NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE|NK_WINDOW_MINIMIZABLE)) {
-        if (vec3_editor(lookfrom, ctx, -100, 100, 0.01)) {
+        if (vec3_editor(lookfrom, "lookfrom:", ctx, -100, 100, 0.01)) {
             reset = true;
         }
-        if (vec3_editor(lookat, ctx, -100, 100, 0.01)) {
+        if (vec3_editor(lookat, "lookat:", ctx, -100, 100, 0.01)) {
             reset = true;
         }
-        if (vec3_editor(vup, ctx, -100, 100, 0.01)) {
+        if (vec3_editor(vup, "vup:", ctx, -100, 100, 0.01)) {
             reset = true;
         }
         if (float_editor(aperture, ctx, "Aperture:", -100, 100, 0.01)) {
@@ -200,7 +201,7 @@ bool camera_gui(struct nk_context *ctx, Vector3 *lookfrom, Vector3 *lookat, Vect
 
 bool object_editor(struct nk_context *ctx, int *selected_index, Hitables world) {
     bool reset = false;
-    if (nk_begin(ctx, "Object Editor", nk_rect(0, 0, 600, 870),
+    if (nk_begin(ctx, "Object Editor", nk_rect(0, 0, 800, 870),
              NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
 
         nk_layout_row_dynamic(ctx, 60, 1);

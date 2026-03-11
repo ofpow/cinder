@@ -4,9 +4,9 @@ typedef struct Hitable Hitable;
 typedef struct MaterialData MaterialData;
 #endif
 
-#define LAMBERTIAN 1
-#define METAL 2
-#define DIELECTRIC 3
+#define LAMBERTIAN 0
+#define METAL 1
+#define DIELECTRIC 2
 
 #define SPHERE 1
 #define TRIANGLE 2

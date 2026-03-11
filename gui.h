@@ -69,7 +69,7 @@ bool sphere_gui(struct nk_context* ctx, Hitable *h) {
 
     Vector3 center = {h->data[0], h->data[1], h->data[2]};
     float radius = h->data[3];
-    int material_type = h->data[4] - 1;
+    int material_type = h->data[4];
     Vector3 albedo = {h->data[5], h->data[6], h->data[7]};
     float data = h->data[8];
     Vector3 emission_col = {h->data[9], h->data[10], h->data[11]};
@@ -89,7 +89,7 @@ bool sphere_gui(struct nk_context* ctx, Hitable *h) {
     int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
     if (new_material_type != material_type) {
         reset = true;
-        h->data[4] = new_material_type + 1;
+        h->data[4] = new_material_type;
     }
     if (vec3_color_editor(&albedo, ctx)) {
         reset = true;
@@ -121,7 +121,7 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     Vector3 a = {h->data[0], h->data[1], h->data[2]};
     Vector3 b = {h->data[3], h->data[4], h->data[5]};
     Vector3 c = {h->data[6], h->data[7], h->data[8]};
-    int material_type = h->data[9] - 1;
+    int material_type = h->data[9];
     Vector3 albedo = {h->data[10], h->data[11], h->data[12]};
     float data = h->data[13];
     Vector3 emission_col = {h->data[14], h->data[15], h->data[16]};
@@ -148,7 +148,7 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     nk_layout_row_dynamic(ctx, 60, 1);
     int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
     if (new_material_type != material_type) {
-        h->data[9] = new_material_type + 1;
+        h->data[9] = new_material_type;
         reset = true;
     }
     if (vec3_color_editor(&albedo, ctx)) {

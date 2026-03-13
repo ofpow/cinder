@@ -2,6 +2,8 @@
 typedef Vector3 vec3;
 typedef struct Hitable Hitable;
 typedef struct MaterialData MaterialData;
+typedef struct Sphere Sphere;
+typedef struct Triangle Triangle;
 #endif
 
 #define LAMBERTIAN 0

@@ -62,52 +62,73 @@ void handle_output(void) {
     }
 }
 
+void add_sphere(Hitables *hitables,
+        Vector3 center,
+        float radius,
+        MaterialData mat
+) {
+    Sphere s = {
+        center,
+        radius,
+        mat
+    };
+    Hitable h = {0};
+    h.type = SPHERE;
+    memcpy(h.data, &s, sizeof(Sphere));
+    append((*(hitables)), h);
+}
+void add_triangle(Hitables *hitables,
+        Vector3 a, Vector3 b, Vector3 c,
+        MaterialData mat
+) {
+    Triangle t = {a, b, c, mat};
+    Hitable h = {0};
+    h.type = TRIANGLE;
+    memcpy(h.data, &t, sizeof(Triangle));
+    append((*(hitables)), h);
+}
+
 Hitables setup_world(void) {
     Hitables hitables = (Hitables){
         calloc(10, sizeof(Hitable)),
         0,
         10
     };
-    
-    append(hitables, ((Hitable){
-        .type = SPHERE,
-        .data = {
-            2, 0, -1,     // a
-            0.5,
-            LAMBERTIAN,   // mat.type
-            0, 1, 0,// mat.albedo
-            0,            // mat.data
-            0, 0, 0,       // mat.emission_col
-            0            // mat.emission_str
+    add_sphere(&hitables,
+        (Vector3){2, 0, -1},
+        0.5,
+        (MaterialData){
+            LAMBERTIAN,   
+            {0, 1, 0},
+            0,            
+            {0, 0, 0},
+            0
         }
-    }));
-    append(hitables, ((Hitable){
-        .type = TRIANGLE,
-        .data = {
-            0, 0, -1,     // a
-            0, 1, -1,     // b
-            1, 1, -1,     // c
-            LAMBERTIAN,   // mat.type
-            0, 0, 1,// mat.albedo
-            0,            // mat.data
-            0, 0, 0,       // mat.emission_col
-            0            // mat.emission_str
+    );
+    add_triangle(&hitables,
+        (Vector3){0, 0, -1},
+        (Vector3){0, 1, -1},
+        (Vector3){1, 1, -1},
+        (MaterialData){
+            LAMBERTIAN,   
+            {0, 0, 1},
+            0,            
+            {0, 0, 0},
+            0
         }
-    }));
-    append(hitables, ((Hitable){
-        .type = TRIANGLE,
-        .data = {
-            1, 0, -1,     // a
-            0, 0, -1,     // b
-            1, 1, -1,     // c
-            LAMBERTIAN,   // mat.type
-            1, 0, 0,// mat.albedo
-            0,            // mat.data
-            0, 0, 0,       // mat.emission_col
-            0            // mat.emission_str
+    );
+    add_triangle(&hitables,
+        (Vector3){1, 0, -1},
+        (Vector3){0, 0, -1},
+        (Vector3){1, 1, -1},
+        (MaterialData){
+            LAMBERTIAN,   
+            {1, 0, 0},
+            0,            
+            {0, 0, 0},
+            0
         }
-    }));
-
+    );
     return hitables;
 }
 

@@ -86,10 +86,8 @@ bool sphere_gui(struct nk_context* ctx, Hitable *h) {
         reset = true;
     }
 
-    nk_layout_row_dynamic(ctx, 60, 3);
-    int new_material_type = -1;
-    for (int i = 0; i < sizeof(material_types) / sizeof(material_types[0]); i++)
-        if (nk_option_label(ctx, material_types[i], material_type == i)) new_material_type = i;
+    nk_layout_row_dynamic(ctx, 60, 1);
+    int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
     if (new_material_type != material_type) {
         reset = true;
         h->data[4] = new_material_type;
@@ -149,10 +147,8 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
         h->data[8] = c.z; 
         reset = true;
     }
-    nk_layout_row_dynamic(ctx, 60, 3);
-    int new_material_type = -1;
-    for (int i = 0; i < sizeof(material_types) / sizeof(material_types[0]); i++)
-        if (nk_option_label(ctx, material_types[i], material_type == i)) new_material_type = i;
+    nk_layout_row_dynamic(ctx, 60, 1);
+    int new_material_type = nk_combo(ctx, material_types, 3, material_type, 30, nk_vec2(200,200));
     if (new_material_type != material_type) {
         reset = true;
         h->data[9] = new_material_type;

@@ -64,6 +64,23 @@ bool vec3_color_editor(Vector3 *c, struct nk_context *ctx) {
     return false;
 }
 
+bool material_gui(struct nk_context* ctx, MaterialData *mat) {
+    bool reset = false;
+
+    nk_layout_row_dynamic(ctx, 60, 1);
+    int new_material_type = nk_combo(ctx, material_types, 3, mat->type, 30, nk_vec2(200,200));
+    if (new_material_type != mat->type) {
+        reset = true;
+        mat->type = new_material_type;
+    }
+    if (vec3_color_editor(&mat->albedo, ctx)) reset = true;
+    if (float_editor(&mat->data, ctx, "Mat data:", -100, 100, 0.01)) reset = true;
+    if (vec3_color_editor(&mat->emission_col, ctx)) reset = true;
+    if (float_editor(&mat->emission_str, ctx, "Emit str:", -100, 100, 0.01)) reset = true;
+
+    return reset;
+}
+
 bool sphere_gui(struct nk_context* ctx, Hitable *h) {
     bool reset = false;
 
@@ -76,26 +93,9 @@ bool sphere_gui(struct nk_context* ctx, Hitable *h) {
     if (float_editor(&s.radius, ctx, "Radius:", -100, 100, 0.01)) {
         reset = true;
     }
+    
+    reset |= material_gui(ctx, &s.mat);
 
-    nk_layout_row_dynamic(ctx, 60, 1);
-    int new_material_type = nk_combo(ctx, material_types, 3, s.mat.type, 30, nk_vec2(200,200));
-    if (new_material_type != s.mat.type) {
-        reset = true;
-        s.mat.type = new_material_type;
-    }
-
-    if (vec3_color_editor(&s.mat.albedo, ctx)) {
-        reset = true;
-    }
-    if (float_editor(&s.mat.data, ctx, "Mat data:", -100, 100, 0.01)) {
-        reset = true;
-    }
-    if (vec3_color_editor(&s.mat.emission_col, ctx)) {
-        reset = true;
-    }
-    if (float_editor(&s.mat.emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
-        reset = true;
-    }
         
     memcpy(h->data, &s, sizeof(Sphere));
     return reset;
@@ -116,24 +116,8 @@ bool triangle_gui(struct nk_context *ctx, Hitable *h) {
     if (vec3_editor(&t.c, "C:", ctx, -100, 100, 0.01)) {
         reset = true;
     }
-    nk_layout_row_dynamic(ctx, 60, 1);
-    int new_material_type = nk_combo(ctx, material_types, 3, t.mat.type, 30, nk_vec2(200,200));
-    if (new_material_type != t.mat.type) {
-        reset = true;
-        t.mat.type = new_material_type;
-    }
-    if (vec3_color_editor(&t.mat.albedo, ctx)) {
-        reset = true;
-    }
-    if (float_editor(&t.mat.data, ctx, "Mat data:", -100, 100, 0.01)) {
-        reset = true;
-    }
-    if (vec3_color_editor(&t.mat.emission_col, ctx)) {
-        reset = true;
-    }
-    if (float_editor(&t.mat.emission_str, ctx, "Emit str:", -100, 100, 0.01)) {
-        reset = true;
-    }
+
+    reset |= material_gui(ctx, &t.mat);
     
     memcpy(h->data, &t, sizeof(Triangle));
     return reset;

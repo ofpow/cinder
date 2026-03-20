@@ -67,9 +67,8 @@ bool scatter_dielectric(Ray r_in, hit_record rec, inout vec3 attenuation, inout 
 }
 
 bool scatter(MaterialData mat, inout Ray r, inout hit_record rec, inout vec3 attenuation, inout Ray scattered) {
-    switch (mat.type) {
-        case LAMBERTIAN: return scatter_lambertian(mat.albedo, rec, attenuation, scattered);
-        case METAL: return scatter_metal(mat.albedo, r, rec, attenuation, scattered, mat.data);
-        case DIELECTRIC: return scatter_dielectric(r, rec, attenuation, scattered, mat.data);
-    }
+    if (mat.type == LAMBERTIAN) return scatter_lambertian(mat.albedo, rec, attenuation, scattered);
+    if (mat.type == METAL) return scatter_metal(mat.albedo, r, rec, attenuation, scattered, mat.data);
+    if (mat.type == DIELECTRIC) return scatter_dielectric(r, rec, attenuation, scattered, mat.data);
+    return false;
 }

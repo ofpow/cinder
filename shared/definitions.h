@@ -14,7 +14,7 @@ typedef struct Triangle Triangle;
 #define TRIANGLE 2
 
 struct MaterialData {
-    uint type;
+    float type;
     vec3 albedo;
     float data;
     vec3 emission_col;

@@ -55,9 +55,13 @@ void handle_output(void) {
 
         for (int i = 0; i < X*Y; i++) {
             Vector4 col = buf[i];
-            fprintf(f, "%d %d %d\n", (int)(255.99*col.x/col.w), (int)(255.99*col.y/col.w), (int)(255.99*col.z/col.w));
+            int r = (255.99*(col.x/col.w) > 255) ? 255 : 255.99*(col.x/col.w);
+            int g = (255.99*(col.y/col.w) > 255) ? 255 : 255.99*(col.y/col.w);
+            int b = (255.99*(col.z/col.w) > 255) ? 255 : 255.99*(col.z/col.w);
+            fprintf(f, "%d %d %d\n", r, g, b);
         }
         free(buf);
+        fclose(f);
         printf("output done\n");
     }
 }

@@ -175,3 +175,27 @@ bool object_editor(struct nk_context *ctx, int *selected_index, Hitables world) 
     nk_end(ctx);
     return reset;
 }
+
+void handle_output(void) {
+    if (IsKeyPressed(KEY_O)) {
+        printf("outputting\n");
+        Vector4 *buf = calloc(X*Y, sizeof(Vector4));
+        rlReadShaderBuffer(screen_ssbo, buf, X*Y*sizeof(Vector4), 0);
+        FILE *f = fopen("out.ppm", "w");
+
+        fprintf(f, "P3\n");
+        fprintf(f, "%d %d\n", X, Y);
+        fprintf(f, "255\n");
+
+        for (int i = 0; i < X*Y; i++) {
+            Vector4 col = buf[i];
+            int r = (255.99*(col.x/col.w) > 255) ? 255 : 255.99*(col.x/col.w);
+            int g = (255.99*(col.y/col.w) > 255) ? 255 : 255.99*(col.y/col.w);
+            int b = (255.99*(col.z/col.w) > 255) ? 255 : 255.99*(col.z/col.w);
+            fprintf(f, "%d %d %d\n", r, g, b);
+        }
+        free(buf);
+        fclose(f);
+        printf("output done\n");
+    }
+}

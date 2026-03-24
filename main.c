@@ -10,21 +10,9 @@
 #include <stdio.h>
 #include <math.h>
 
-#define append(_array, _element) do {                                               \
-    if (_array.index >= _array.capacity) {                                              \
-        _array.capacity *= 2;                                                           \
-        _array.data = realloc(_array.data, _array.capacity * sizeof(_array.data[0]));   \
-    }                                                                                   \
-                                                                                        \
-    _array.data[_array.index++] = _element;                                             \
-} while (0)
+#include "shared/definitions.h"
 
-#define define_array(_name, _type) \
-    typedef struct _name {         \
-        _type *data;               \
-        int64_t index;             \
-        int64_t capacity;          \
-    } _name                        \
+#include "array.h"
 
 unsigned int screen_ssbo;
 unsigned int world_ssbo;
@@ -36,35 +24,9 @@ unsigned int compute_program;
 const int X = 768;
 const int Y = X/2;
 
-#include "shared/definitions.h"
-
 define_array(Hitables, Hitable);
 
 #include "gui.h"
-
-void handle_output(void) {
-    if (IsKeyPressed(KEY_O)) {
-        printf("outputting\n");
-        Vector4 *buf = calloc(X*Y, sizeof(Vector4));
-        rlReadShaderBuffer(screen_ssbo, buf, X*Y*sizeof(Vector4), 0);
-        FILE *f = fopen("out.ppm", "w");
-
-        fprintf(f, "P3\n");
-        fprintf(f, "%d %d\n", X, Y);
-        fprintf(f, "255\n");
-
-        for (int i = 0; i < X*Y; i++) {
-            Vector4 col = buf[i];
-            int r = (255.99*(col.x/col.w) > 255) ? 255 : 255.99*(col.x/col.w);
-            int g = (255.99*(col.y/col.w) > 255) ? 255 : 255.99*(col.y/col.w);
-            int b = (255.99*(col.z/col.w) > 255) ? 255 : 255.99*(col.z/col.w);
-            fprintf(f, "%d %d %d\n", r, g, b);
-        }
-        free(buf);
-        fclose(f);
-        printf("output done\n");
-    }
-}
 
 void add_sphere(Hitables *hitables,
         Vector3 center,
@@ -136,33 +98,28 @@ Hitables setup_world(void) {
     return hitables;
 }
 
-char *assemble_compute_shader(void) {
-    int compute_code_length = 14;
-    char *compute_code = calloc(compute_code_length, sizeof(char));
-    sprintf(compute_code, "%s", "#version 430\n");
-
-    char *compute_includes[] = {
-        "compute_shaders/glsl.glsl",
-        "shared/definitions.h",
-        "compute_shaders/ray.glsl",
-        "compute_shaders/vec3.glsl", 
-        "compute_shaders/sphere.glsl", 
-        "compute_shaders/triangle.glsl", 
-        "compute_shaders/hitablelist.glsl", 
-        "compute_shaders/camera.glsl", 
-        "compute_shaders/material.glsl", 
-        "compute_shaders/compute.glsl"
-    };
-    for (int i = 0; i < (sizeof(compute_includes) / sizeof(char*)); i++) {
-        char *s = LoadFileText(compute_includes[i]);
-        int len = strlen(s);
-        compute_code = realloc(compute_code, compute_code_length + len);
-        strcat(compute_code, s);
-        free(s);
-        compute_code_length += len;
-    }
-    return compute_code;
-}
+const char compute_code[] = {
+#embed "compute_shaders/glsl.glsl"
+    ,
+#embed "shared/definitions.h"
+    ,
+#embed "compute_shaders/ray.glsl"
+    ,
+#embed "compute_shaders/vec3.glsl" 
+    ,
+#embed "compute_shaders/sphere.glsl" 
+    ,
+#embed "compute_shaders/triangle.glsl" 
+    ,
+#embed "compute_shaders/hitablelist.glsl" 
+    ,
+#embed "compute_shaders/camera.glsl" 
+    ,
+#embed "compute_shaders/material.glsl" 
+    ,
+#embed "compute_shaders/compute.glsl"
+    , 0
+};
 
 int main(void) {
     struct nk_context *ctx = InitNuklear(30);
@@ -172,9 +129,6 @@ int main(void) {
     InitWindow(X*SCALE, Y*SCALE, "");
     SetExitKey(KEY_Q);
     
-    char *compute_code = assemble_compute_shader();
-    //printf("%s\n", compute_code);
-
     compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
     compute_program = rlLoadComputeShaderProgram(compute_shader);
     
@@ -185,8 +139,6 @@ int main(void) {
     rlSetUniform(rlGetLocationUniform(compute_program, "Y"), &Y, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "num_hitables"), &hitables.index, RL_SHADER_UNIFORM_INT, 1);
     rlDisableShader();
-
-    UnloadFileText(compute_code);
 
     Shader frag_shader = LoadShader(NULL, "compute_shaders/frag.glsl");
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "resolution"), &resolution, SHADER_UNIFORM_VEC2);

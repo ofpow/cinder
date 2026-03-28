@@ -121,6 +121,11 @@ const char compute_code[] = {
     , 0
 };
 
+const char frag_code[] = {
+#embed "compute_shaders/frag.glsl"
+    , 0
+};
+
 int main(void) {
     struct nk_context *ctx = InitNuklear(30);
 
@@ -140,7 +145,7 @@ int main(void) {
     rlSetUniform(rlGetLocationUniform(compute_program, "num_hitables"), &hitables.index, RL_SHADER_UNIFORM_INT, 1);
     rlDisableShader();
 
-    Shader frag_shader = LoadShader(NULL, "compute_shaders/frag.glsl");
+    Shader frag_shader = LoadShaderFromMemory(NULL, frag_code);
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "resolution"), &resolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 

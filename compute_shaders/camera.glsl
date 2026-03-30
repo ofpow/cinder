@@ -8,17 +8,17 @@ vec3 random_in_unit_disk() {
     return p;
 }
 
-Ray get_ray(Camera c, float u, float v) {
+Ray get_ray(Camera c, float s, float t) {
     vec3 rd = c.lens_radius * random_in_unit_disk();
-    vec3 offst = c.u * rd.x + v * rd.y;
-    return Ray(c.origin + offst, c.lower_left_corner + u*c.horizontal + v*c.vertical - c.origin - offst);
+    vec3 offst = c.u * rd.x + c.v * rd.y;
+    return Ray(c.origin + offst, c.horizontal*s + c.vertical*t + c.lower_left_corner - c.origin - offst);
 }
 
 Camera c;
 
 void init_camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect, float aperture, float focus_dist) {
-    lookfrom.y = -lookfrom.y;
-    lookat.y = -lookat.y;
+    lookfrom.x = -lookfrom.x;
+    lookat.x = -lookat.x;
 
     c.lens_radius = aperture / 2;
 
@@ -28,6 +28,7 @@ void init_camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect,
     c.origin = lookfrom;
     c.w = unit_vector(lookfrom - lookat);
     c.u = unit_vector(cross(vup, c.w));
+    c.u = unit_vector(cross(c.w, vup));
     c.v = cross(c.w, c.u);
     
     c.lower_left_corner = c.origin - half_width*focus_dist*c.u - half_height*focus_dist*c.v - focus_dist*c.w;

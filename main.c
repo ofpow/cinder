@@ -5,10 +5,14 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #include "raylib-nuklear.h"
 
+#define FAST_OBJ_IMPLEMENTATION
+#include "fast_obj.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 
 #include "shared/definitions.h"
 
@@ -54,47 +58,46 @@ void add_triangle(Hitables *hitables,
     append((*(hitables)), h);
 }
 
+void load_obj(char *obj_file, Hitables *hitables) {
+    fastObjMesh *m = fast_obj_read(obj_file);
+    
+    uint index_offset = 0;
+    printf("%d\n", m->face_count);
+    for (int i = 0; i < m->face_count; i++) {
+        uint num_vertices = m->face_vertices[i];
+        assert(("Require models to be triangulated", m->face_vertices[i] == 3));
+        fastObjIndex idx1 = m->indices[index_offset + 0];
+        fastObjIndex idx2 = m->indices[index_offset + 1];
+        fastObjIndex idx3 = m->indices[index_offset + 2];
+    
+        add_triangle(hitables,
+                    ((Vector3*)m->positions)[idx1.p],
+                    ((Vector3*)m->positions)[idx2.p],
+                    ((Vector3*)m->positions)[idx3.p],
+                    (MaterialData){
+                        LAMBERTIAN,   
+                        {0.5, 0.5, 0.5},
+                        0,            
+                        {0, 0, 0},
+                        0
+                    }
+        );
+
+        index_offset += 3;
+    }
+
+    fast_obj_destroy(m);
+}
+
 Hitables setup_world(void) {
     Hitables hitables = (Hitables){
         calloc(10, sizeof(Hitable)),
         0,
         10
     };
-    add_sphere(&hitables,
-        (Vector3){2, 0, -1},
-        0.5,
-        (MaterialData){
-            LAMBERTIAN,   
-            {0, 1, 0},
-            0,            
-            {0, 0, 0},
-            0
-        }
-    );
-    add_triangle(&hitables,
-        (Vector3){0, 0, -1},
-        (Vector3){0, 1, -1},
-        (Vector3){1, 1, -1},
-        (MaterialData){
-            LAMBERTIAN,   
-            {0, 0, 1},
-            0,            
-            {0, 0, 0},
-            0
-        }
-    );
-    add_triangle(&hitables,
-        (Vector3){1, 0, -1},
-        (Vector3){0, 0, -1},
-        (Vector3){1, 1, -1},
-        (MaterialData){
-            LAMBERTIAN,   
-            {1, 0, 0},
-            0,            
-            {0, 0, 0},
-            0
-        }
-    );
+
+    load_obj("cube.obj", &hitables);
+
     return hitables;
 }
 

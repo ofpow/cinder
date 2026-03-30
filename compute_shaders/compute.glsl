@@ -26,7 +26,7 @@ vec3 color(Ray r) {
             }
         } else {
             vec3 unit_dir = normalize(r.direction);
-            float t = 0.5 * (-unit_dir.y + 1.0);
+            float t = 0.5 * (unit_dir.y + 1.0);
             vec3 col = mix(vec3(1.0), vec3(0.5, 0.7, 1.0), t);
             light += col*final_color;
             break;

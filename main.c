@@ -58,7 +58,7 @@ void add_triangle(Hitables *hitables,
     append((*(hitables)), h);
 }
 
-void load_obj(char *obj_file, Hitables *hitables) {
+void load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
     fastObjMesh *m = fast_obj_read(obj_file);
     
     uint index_offset = 0;
@@ -71,9 +71,9 @@ void load_obj(char *obj_file, Hitables *hitables) {
         fastObjIndex idx3 = m->indices[index_offset + 2];
     
         add_triangle(hitables,
-                    ((Vector3*)m->positions)[idx1.p],
-                    ((Vector3*)m->positions)[idx2.p],
-                    ((Vector3*)m->positions)[idx3.p],
+                    Vector3Add(offset, ((Vector3*)m->positions)[idx1.p]),
+                    Vector3Add(offset, ((Vector3*)m->positions)[idx2.p]),
+                    Vector3Add(offset, ((Vector3*)m->positions)[idx3.p]),
                     (MaterialData){
                         LAMBERTIAN,   
                         {0.5, 0.5, 0.5},
@@ -96,7 +96,9 @@ Hitables setup_world(void) {
         10
     };
 
-    load_obj("cube.obj", &hitables);
+    for (int i = 0; i < 5; i++) {
+        load_obj("cube.obj", &hitables, (Vector3){0, 0, -i*2.5});
+    }
 
     return hitables;
 }

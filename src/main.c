@@ -3,10 +3,10 @@
 #include <rlgl.h>
 
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
-#include "raylib-nuklear.h"
+#include "../external/raylib-nuklear.h"
 
 #define FAST_OBJ_IMPLEMENTATION
-#include "fast_obj.h"
+#include "../external/fast_obj.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -60,9 +60,9 @@ void add_triangle(Hitables *hitables,
 
 void load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
     fastObjMesh *m = fast_obj_read(obj_file);
+    if (!m) { printf("Couldn't read obj file `%s`\n", obj_file); exit(1); }
     
     uint index_offset = 0;
-    printf("%d\n", m->face_count);
     for (int i = 0; i < m->face_count; i++) {
         uint num_vertices = m->face_vertices[i];
         assert(("Require models to be triangulated", m->face_vertices[i] == 3));
@@ -96,38 +96,38 @@ Hitables setup_world(void) {
         10
     };
 
-    for (int i = 0; i < 5; i++) {
-        load_obj("cube.obj", &hitables, (Vector3){0, 0, -i*2.5});
+    for (int i = -2; i < 3; i++) {
+        load_obj("assets/suzanne.obj", &hitables, (Vector3){-i*2.5, 0, -1});
     }
 
     return hitables;
 }
 
 const char compute_code[] = {
-#embed "compute_shaders/glsl.glsl"
+#embed "shaders/glsl.glsl"
     ,
 #embed "shared/definitions.h"
     ,
-#embed "compute_shaders/ray.glsl"
+#embed "shaders/ray.glsl"
     ,
-#embed "compute_shaders/vec3.glsl" 
+#embed "shaders/vec3.glsl" 
     ,
-#embed "compute_shaders/sphere.glsl" 
+#embed "shaders/sphere.glsl" 
     ,
-#embed "compute_shaders/triangle.glsl" 
+#embed "shaders/triangle.glsl" 
     ,
-#embed "compute_shaders/hitablelist.glsl" 
+#embed "shaders/hitablelist.glsl" 
     ,
-#embed "compute_shaders/camera.glsl" 
+#embed "shaders/camera.glsl" 
     ,
-#embed "compute_shaders/material.glsl" 
+#embed "shaders/material.glsl" 
     ,
-#embed "compute_shaders/compute.glsl"
+#embed "shaders/compute.glsl"
     , 0
 };
 
 const char frag_code[] = {
-#embed "compute_shaders/frag.glsl"
+#embed "shaders/frag.glsl"
     , 0
 };
 
@@ -163,7 +163,7 @@ int main(void) {
 
     int frame = 1;
     int reset = 0;
-    Vector3 lookfrom = {0, 0, 2};
+    Vector3 lookfrom = {0, 0, 4};
     Vector3 lookat = {0, 0, -1};
     Vector3 vup = {0, 1, 0};
     float aperture = 0.0;

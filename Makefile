@@ -1,2 +1,2 @@
 run:
-	@cc -o main main.c -lraylib -lm && ./main
+	@cc -o main src/main.c -lraylib -lm && ./main

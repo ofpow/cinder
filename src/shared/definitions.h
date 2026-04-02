@@ -4,6 +4,7 @@ typedef struct Hitable Hitable;
 typedef struct MaterialData MaterialData;
 typedef struct Sphere Sphere;
 typedef struct Triangle Triangle;
+typedef struct MeshInfo MeshInfo;
 #endif
 
 #define LAMBERTIAN 0
@@ -61,3 +62,9 @@ struct Camera {
     float lens_radius;
 };
 
+struct MeshInfo {
+    vec3 bounds_min;
+    uint first_triangle_index;
+    vec3 bounds_max;
+    uint num_triangles;
+};

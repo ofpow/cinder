@@ -13,13 +13,15 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+#include <float.h>
 
 #include "shared/definitions.h"
 
 #include "array.h"
 
 unsigned int screen_ssbo;
-unsigned int world_ssbo;
+unsigned int hitables_ssbo;
+unsigned int meshes_ssbo;
 
 unsigned int compute_shader;
 unsigned int compute_program;
@@ -29,6 +31,12 @@ const int X = 768;
 const int Y = X/2;
 
 define_array(Hitables, Hitable);
+define_array(Meshes, MeshInfo);
+
+typedef struct World {
+    Hitables hitables;
+    Meshes meshes;
+} World;
 
 #include "gui.h"
 
@@ -58,9 +66,14 @@ void add_triangle(Hitables *hitables,
     append((*(hitables)), h);
 }
 
-void load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
+MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
     fastObjMesh *m = fast_obj_read(obj_file);
     if (!m) { printf("Couldn't read obj file `%s`\n", obj_file); exit(1); }
+
+    MeshInfo mesh = {0};
+    mesh.first_triangle_index = hitables->index;
+    mesh.bounds_min = (Vector3){FLT_MAX, FLT_MAX, FLT_MAX};
+    mesh.bounds_max = (Vector3){-FLT_MAX, -FLT_MAX, -FLT_MAX};
     
     uint index_offset = 0;
     for (int i = 0; i < m->face_count; i++) {
@@ -69,38 +82,58 @@ void load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
         fastObjIndex idx1 = m->indices[index_offset + 0];
         fastObjIndex idx2 = m->indices[index_offset + 1];
         fastObjIndex idx3 = m->indices[index_offset + 2];
+
+        Vector3 a = Vector3Add(offset, ((Vector3*)m->positions)[idx1.p]);
+        Vector3 b = Vector3Add(offset, ((Vector3*)m->positions)[idx2.p]);
+        Vector3 c = Vector3Add(offset, ((Vector3*)m->positions)[idx3.p]);
+
+        mesh.bounds_min = Vector3Min(mesh.bounds_min, a);
+        mesh.bounds_min = Vector3Min(mesh.bounds_min, b);
+        mesh.bounds_min = Vector3Min(mesh.bounds_min, c);
+        mesh.bounds_max = Vector3Max(mesh.bounds_max, a);
+        mesh.bounds_max = Vector3Max(mesh.bounds_max, b);
+        mesh.bounds_max = Vector3Max(mesh.bounds_max, c);
     
-        add_triangle(hitables,
-                    Vector3Add(offset, ((Vector3*)m->positions)[idx1.p]),
-                    Vector3Add(offset, ((Vector3*)m->positions)[idx2.p]),
-                    Vector3Add(offset, ((Vector3*)m->positions)[idx3.p]),
-                    (MaterialData){
-                        LAMBERTIAN,   
-                        {0.5, 0.5, 0.5},
-                        0,            
-                        {0, 0, 0},
-                        0
-                    }
+        add_triangle(
+            hitables,
+            a, b, c,
+            (MaterialData){
+                LAMBERTIAN,   
+                {0.5, 0.5, 0.5},
+                0,            
+                {0, 0, 0},
+                0
+            }
         );
 
         index_offset += 3;
+        mesh.num_triangles++;
     }
 
     fast_obj_destroy(m);
+
+    return mesh;
 }
 
-Hitables setup_world(void) {
+World setup_world(void) {
     Hitables hitables = (Hitables){
         calloc(10, sizeof(Hitable)),
         0,
         10
     };
 
+    Meshes meshes = (Meshes){
+        calloc(10, sizeof(MeshInfo)),
+        0,
+        10
+    };
+
     for (int i = -2; i < 3; i++) {
-        load_obj("assets/suzanne.obj", &hitables, (Vector3){-i*2.5, 0, -1});
+        MeshInfo m = load_obj("assets/suzanne.obj", &hitables, (Vector3){-i*2.5, 0, -1});
+        append(meshes, m);
     }
 
-    return hitables;
+    return (World){hitables, meshes};
 }
 
 const char compute_code[] = {
@@ -142,12 +175,13 @@ int main(void) {
     compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
     compute_program = rlLoadComputeShaderProgram(compute_shader);
     
-    Hitables hitables = setup_world();
+    World world = setup_world();
 
     rlEnableShader(compute_program);
     rlSetUniform(rlGetLocationUniform(compute_program, "X"), &X, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "Y"), &Y, RL_SHADER_UNIFORM_INT, 1);
-    rlSetUniform(rlGetLocationUniform(compute_program, "num_hitables"), &hitables.index, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "num_hitables"), &world.hitables.index, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "num_meshes"), &world.meshes.index, RL_SHADER_UNIFORM_INT, 1);
     rlDisableShader();
 
     Shader frag_shader = LoadShaderFromMemory(NULL, frag_code);
@@ -155,7 +189,8 @@ int main(void) {
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 
     screen_ssbo = rlLoadShaderBuffer(X*Y*sizeof(Vector4), NULL, RL_DYNAMIC_COPY);
-    world_ssbo = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
+    hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
+    meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
 
     Image img = GenImageColor(X, Y, WHITE);
     Texture tex = LoadTextureFromImage(img);
@@ -170,7 +205,7 @@ int main(void) {
     int vfov = 90;
     int selected_index = 0;
 
-    bool show_gui = true;
+    bool show_gui = false;
 
     while (!WindowShouldClose()) {
         frame++;
@@ -179,10 +214,12 @@ int main(void) {
 
         rlEnableShader(compute_program);
         if (reset == 1) {
-            world_ssbo = rlLoadShaderBuffer(hitables.index*sizeof(Hitable), hitables.data, RL_DYNAMIC_COPY);
+            hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
+            meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
         }
         rlBindShaderBuffer(screen_ssbo, 1);
-        rlBindShaderBuffer(world_ssbo, 2);
+        rlBindShaderBuffer(hitables_ssbo, 2);
+        rlBindShaderBuffer(meshes_ssbo, 3);
         rlSetUniform(rlGetLocationUniform(compute_program, "reset"), &reset, RL_SHADER_UNIFORM_INT, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
         rlSetUniform(rlGetLocationUniform(compute_program, "lookfrom"), &lookfrom, RL_SHADER_UNIFORM_VEC3, 1);
@@ -214,7 +251,7 @@ int main(void) {
         if (show_gui) {
             UpdateNuklear(ctx);
             reset |= camera_gui(ctx, &lookfrom, &lookat, &vup, &aperture, &vfov);
-            reset |= object_editor(ctx, &selected_index, hitables);
+            reset |= object_editor(ctx, &selected_index, world.hitables);
 
             DrawNuklear(ctx);
         }
@@ -223,7 +260,8 @@ int main(void) {
     }
 
     rlUnloadShaderBuffer(screen_ssbo);
-    rlUnloadShaderBuffer(world_ssbo);
+    rlUnloadShaderBuffer(hitables_ssbo);
+    rlUnloadShaderBuffer(meshes_ssbo);
 
     rlUnloadShaderProgram(compute_program);
 

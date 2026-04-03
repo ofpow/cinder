@@ -66,7 +66,7 @@ void add_triangle(Hitables *hitables,
     append((*(hitables)), h);
 }
 
-MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
+MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset, float scale) {
     fastObjMesh *m = fast_obj_read(obj_file);
     if (!m) { printf("Couldn't read obj file `%s`\n", obj_file); exit(1); }
 
@@ -83,9 +83,9 @@ MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
         fastObjIndex idx2 = m->indices[index_offset + 1];
         fastObjIndex idx3 = m->indices[index_offset + 2];
 
-        Vector3 a = Vector3Add(offset, ((Vector3*)m->positions)[idx1.p]);
-        Vector3 b = Vector3Add(offset, ((Vector3*)m->positions)[idx2.p]);
-        Vector3 c = Vector3Add(offset, ((Vector3*)m->positions)[idx3.p]);
+        Vector3 a = Vector3Scale(Vector3Add(offset, ((Vector3*)m->positions)[idx1.p]), scale);
+        Vector3 b = Vector3Scale(Vector3Add(offset, ((Vector3*)m->positions)[idx2.p]), scale);
+        Vector3 c = Vector3Scale(Vector3Add(offset, ((Vector3*)m->positions)[idx3.p]), scale);
 
         mesh.bounds_min = Vector3Min(mesh.bounds_min, a);
         mesh.bounds_min = Vector3Min(mesh.bounds_min, b);
@@ -144,9 +144,8 @@ World setup_world(void) {
         0,
         10
     };
-    for (int i = 0; i < 1; i++) {
-        append(meshes, load_obj("assets/suzanne.obj", &hitables, (Vector3){2*i, 0, -2}));
-    }
+    append(meshes, load_obj("assets/empty-cornell.obj", &hitables, (Vector3){0}, 1));
+    append(meshes, load_obj("assets/suzanne.obj", &hitables, (Vector3){0, 1, -1.5}, 1.5));
     return (World){hitables, meshes};
 }
 
@@ -212,8 +211,8 @@ int main(void) {
 
     int frame = 1;
     int reset = 0;
-    Vector3 lookfrom = {0, 1, 4};
-    Vector3 lookat = {0, 0, -1};
+    Vector3 lookfrom = {0, 2, 2};
+    Vector3 lookat = {0, 2, -1};
     Vector3 vup = {0, 1, 0};
     float aperture = 0.0;
     int vfov = 90;

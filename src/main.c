@@ -105,12 +105,11 @@ MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
         }
 
         Vector3 emission = {0};
+        float emission_strength = 0;
         if (material_index < m->material_count) {
             emission = (Vector3){mat->Ke[0], mat->Ke[1], mat->Ke[2]};
-        } else {
-            emission = (Vector3){0};
+            emission_strength = fmaxf(fmaxf(emission.x, emission.y), emission.z);
         }
-        float emission_strength = fmaxf(fmaxf(emission.x, emission.y), emission.z);
 
         add_triangle(
             hitables,
@@ -145,9 +144,9 @@ World setup_world(void) {
         0,
         10
     };
-
-    append(meshes, load_obj("assets/cornell-box.obj", &hitables, (Vector3){0}));
-
+    for (int i = 0; i < 1; i++) {
+        append(meshes, load_obj("assets/suzanne.obj", &hitables, (Vector3){2*i, 0, -2}));
+    }
     return (World){hitables, meshes};
 }
 

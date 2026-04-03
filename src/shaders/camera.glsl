@@ -28,8 +28,7 @@ void init_camera(vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect,
     c.origin = lookfrom;
     c.w = unit_vector(lookfrom - lookat);
     c.u = unit_vector(cross(vup, c.w));
-    c.u = unit_vector(cross(c.w, vup));
-    c.v = cross(c.w, c.u);
+    c.v = cross(c.u, c.w);
     
     c.lower_left_corner = c.origin - half_width*focus_dist*c.u - half_height*focus_dist*c.v - focus_dist*c.w;
     c.horizontal = 2*half_width*focus_dist*c.u;

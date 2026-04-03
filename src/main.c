@@ -93,16 +93,34 @@ MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset) {
         mesh.bounds_max = Vector3Max(mesh.bounds_max, a);
         mesh.bounds_max = Vector3Max(mesh.bounds_max, b);
         mesh.bounds_max = Vector3Max(mesh.bounds_max, c);
-    
+
+        uint material_index = m->face_materials[i];
+        fastObjMaterial *mat = &m->materials[material_index];
+
+        Vector3 albedo = {0};
+        if (material_index < m->material_count) {
+            albedo = (Vector3){mat->Kd[0], mat->Kd[1], mat->Kd[2]};
+        } else {
+            albedo = (Vector3){0.5, 0.5, 0.5};
+        }
+
+        Vector3 emission = {0};
+        if (material_index < m->material_count) {
+            emission = (Vector3){mat->Ke[0], mat->Ke[1], mat->Ke[2]};
+        } else {
+            emission = (Vector3){0};
+        }
+        float emission_strength = fmaxf(fmaxf(emission.x, emission.y), emission.z);
+
         add_triangle(
             hitables,
             a, b, c,
             (MaterialData){
                 LAMBERTIAN,   
-                {0.5, 0.5, 0.5},
+                albedo,
                 0,            
-                {0, 0, 0},
-                0
+                emission,
+                emission_strength
             }
         );
 
@@ -128,10 +146,7 @@ World setup_world(void) {
         10
     };
 
-    for (int i = -2; i < 3; i++) {
-        MeshInfo m = load_obj("assets/suzanne.obj", &hitables, (Vector3){-i*2.5, 0, -1});
-        append(meshes, m);
-    }
+    append(meshes, load_obj("assets/cornell-box.obj", &hitables, (Vector3){0}));
 
     return (World){hitables, meshes};
 }
@@ -198,7 +213,7 @@ int main(void) {
 
     int frame = 1;
     int reset = 0;
-    Vector3 lookfrom = {0, 0, 4};
+    Vector3 lookfrom = {0, 1, 4};
     Vector3 lookat = {0, 0, -1};
     Vector3 vup = {0, 1, 0};
     float aperture = 0.0;

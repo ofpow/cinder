@@ -72,6 +72,6 @@ void main() {
     if (reset == 1) current = vec4(0);
 
     vec3 c = max(col / float(aa_steps), vec3(0));
-    vec3 new_color = current.xyz + sqrt(c);
+    vec3 new_color = current.xyz + c;
     buf[x + y*X] = vec4(new_color, current.w + 1);
 }

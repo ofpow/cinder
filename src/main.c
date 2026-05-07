@@ -247,7 +247,6 @@ int main(void) {
 
         BeginDrawing();
         BeginShaderMode(frag_shader);
-        DrawTexture(tex, 0, 0, WHITE);
         DrawTexturePro(tex,
             (Rectangle){0, 0, tex.width, tex.height},
             (Rectangle){0, 0, SCALE*tex.width, SCALE*tex.height},

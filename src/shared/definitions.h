@@ -5,6 +5,7 @@ typedef struct MaterialData MaterialData;
 typedef struct Sphere Sphere;
 typedef struct Triangle Triangle;
 typedef struct MeshInfo MeshInfo;
+typedef unsigned int uint;
 #endif
 
 #define LAMBERTIAN 0

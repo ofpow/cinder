@@ -1,6 +1,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <rlgl.h>
+#include <external/glad.h>
 
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #include "../external/raylib-nuklear.h"
@@ -26,9 +27,13 @@ unsigned int meshes_ssbo;
 unsigned int compute_shader;
 unsigned int compute_program;
 
+Shader frag_shader;
+
 #define SCALE (3072 / X)
 const int X = 768;
 const int Y = X/2;
+
+const Vector2 resolution = { (float)X, (float)Y };
 
 define_array(Hitables, Hitable);
 define_array(Meshes, MeshInfo);
@@ -177,18 +182,75 @@ const char frag_code[] = {
     , 0
 };
 
-int main(void) {
-    struct nk_context *ctx = InitNuklear(30);
+World world;
 
-    const Vector2 resolution = { (float)X, (float)Y };
+int frame = 1;
+int reset = 0;
+Vector3 lookfrom = {0, 2, 2};
+Vector3 lookat = {0, 2, -1};
+Vector3 vup = {0, 1, 0};
+float aperture = 0.0;
+int vfov = 90;
+int selected_index = 0;
 
-    InitWindow(X*SCALE, Y*SCALE, "");
-    SetExitKey(KEY_Q);
-    
+bool show_gui = false;
+
+void run_compute_shader(int rand_seed) {
+    rlEnableShader(compute_program);
+    if (reset == 1) {
+        hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
+        meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
+    }
+    rlBindShaderBuffer(screen_ssbo, 1);
+    rlBindShaderBuffer(hitables_ssbo, 2);
+    rlBindShaderBuffer(meshes_ssbo, 3);
+    rlSetUniform(rlGetLocationUniform(compute_program, "reset"), &reset, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &rand_seed, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "lookfrom"), &lookfrom, RL_SHADER_UNIFORM_VEC3, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "lookat"), &lookat, RL_SHADER_UNIFORM_VEC3, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "vup"), &vup, RL_SHADER_UNIFORM_VEC3, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "aperture"), &aperture, RL_SHADER_UNIFORM_FLOAT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "vfov"), &vfov, RL_SHADER_UNIFORM_INT, 1);
+    rlComputeShaderDispatch(X/16, Y/16, 1);
+    rlDisableShader();
+}
+
+void print_progress(size_t count, size_t max) {
+    int bar_width = 50;
+    float progress = (float) count / max;
+    int bar_length = progress * bar_width;
+
+    printf("\rProgress: ["); 
+    for (int i = 0; i < bar_length; ++i) {
+        printf("#");
+    }
+    for (int i = bar_length; i < bar_width; ++i) {
+        printf(" ");
+    }
+    printf("] %.2f%%", progress * 100);
+
+    fflush(stdout); 
+}
+
+void render_scene(int samples) {
+    SetTargetFPS(60);
+
+    for (int i = 0; i < samples; i++) {
+        run_compute_shader(i);
+        if (i % 10 == 0) {
+            glFinish();
+            print_progress(i, samples);
+        }
+    }
+    print_progress(samples, samples);
+    printf("\n");
+}
+
+void setup_shaders(void) {
     compute_shader = rlCompileShader(compute_code, RL_COMPUTE_SHADER);
     compute_program = rlLoadComputeShaderProgram(compute_shader);
     
-    World world = setup_world();
+    world = setup_world();
 
     rlEnableShader(compute_program);
     rlSetUniform(rlGetLocationUniform(compute_program, "X"), &X, RL_SHADER_UNIFORM_INT, 1);
@@ -197,53 +259,48 @@ int main(void) {
     rlSetUniform(rlGetLocationUniform(compute_program, "num_meshes"), &world.meshes.index, RL_SHADER_UNIFORM_INT, 1);
     rlDisableShader();
 
-    Shader frag_shader = LoadShaderFromMemory(NULL, frag_code);
+    frag_shader = LoadShaderFromMemory(NULL, frag_code);
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "resolution"), &resolution, SHADER_UNIFORM_VEC2);
     SetShaderValue(frag_shader, GetShaderLocation(frag_shader, "X"), &X, SHADER_UNIFORM_INT);
 
     screen_ssbo = rlLoadShaderBuffer(X*Y*sizeof(Vector4), NULL, RL_DYNAMIC_COPY);
     hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
     meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
+}
+
+bool interactive = false;
+
+int main(int argc, char **argv) {
+
+    if (argc > 1) {
+        if (!strcmp(argv[1], "interactive")) interactive = true;
+    }
+
+    struct nk_context *ctx = InitNuklear(30);
+    
+    SetConfigFlags(FLAG_WINDOW_HIDDEN);
+    InitWindow(X*SCALE, Y*SCALE, "");
+    SetExitKey(KEY_Q);
+
+    setup_shaders();
 
     Image img = GenImageColor(X, Y, WHITE);
     Texture tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
-    int frame = 1;
-    int reset = 0;
-    Vector3 lookfrom = {0, 2, 2};
-    Vector3 lookat = {0, 2, -1};
-    Vector3 vup = {0, 1, 0};
-    float aperture = 0.0;
-    int vfov = 90;
-    int selected_index = 0;
+    if (!interactive) render_scene(500);
 
-    bool show_gui = false;
+    ClearWindowState(FLAG_WINDOW_HIDDEN);
 
     while (!WindowShouldClose()) {
         frame++;
 
         handle_output();
 
-        rlEnableShader(compute_program);
-        if (reset == 1) {
-            hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
-            meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
+        if (interactive) {
+            run_compute_shader(frame);
+            if (reset == 1) reset = 0;
         }
-        rlBindShaderBuffer(screen_ssbo, 1);
-        rlBindShaderBuffer(hitables_ssbo, 2);
-        rlBindShaderBuffer(meshes_ssbo, 3);
-        rlSetUniform(rlGetLocationUniform(compute_program, "reset"), &reset, RL_SHADER_UNIFORM_INT, 1);
-        rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &frame, RL_SHADER_UNIFORM_INT, 1);
-        rlSetUniform(rlGetLocationUniform(compute_program, "lookfrom"), &lookfrom, RL_SHADER_UNIFORM_VEC3, 1);
-        rlSetUniform(rlGetLocationUniform(compute_program, "lookat"), &lookat, RL_SHADER_UNIFORM_VEC3, 1);
-        rlSetUniform(rlGetLocationUniform(compute_program, "vup"), &vup, RL_SHADER_UNIFORM_VEC3, 1);
-        rlSetUniform(rlGetLocationUniform(compute_program, "aperture"), &aperture, RL_SHADER_UNIFORM_FLOAT, 1);
-        rlSetUniform(rlGetLocationUniform(compute_program, "vfov"), &vfov, RL_SHADER_UNIFORM_INT, 1);
-        rlComputeShaderDispatch(X/16, Y/16, 1);
-        rlDisableShader();
-
-        if (reset == 1) reset = 0;
 
         BeginDrawing();
         BeginShaderMode(frag_shader);

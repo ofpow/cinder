@@ -149,8 +149,7 @@ World setup_world(void) {
         0,
         10
     };
-    append(meshes, load_obj("assets/empty-cornell.obj", &hitables, (Vector3){0}, 1));
-    append(meshes, load_obj("assets/suzanne.obj", &hitables, (Vector3){0, 1, -1.5}, 1.5));
+    append(meshes, load_obj("assets/cornell-box.obj", &hitables, (Vector3){0}, 1));
     return (World){hitables, meshes};
 }
 
@@ -288,7 +287,7 @@ int main(int argc, char **argv) {
     Texture tex = LoadTextureFromImage(img);
     UnloadImage(img);
 
-    if (!interactive) render_scene(500);
+    if (!interactive) render_scene(2000);
 
     ClearWindowState(FLAG_WINDOW_HIDDEN);
 

@@ -11,15 +11,26 @@ const float FLT_MAX = 3.40282347e+38;
 vec3 color(Ray r) {
     vec3 light = vec3(0);
     vec3 final_color = vec3(1.0);
-    for (int i = 0; i < 4; ++i) {
-        hit_record rec = hit_record(0, vec3(0), vec3(0), MaterialData(LAMBERTIAN, vec3(0), 0, vec3(0), 0));
+    for (int i = 0; i < 50; ++i) {
+        hit_record rec;
         if (hit(r, 0.001, FLT_MAX, rec)) {
-            vec3 attenuation = vec3(0);
-            Ray scattered = Ray(vec3(0), vec3(0));
+            vec3 emitted_light = rec.mat.emission_col * rec.mat.emission_str;
+            light += emitted_light * final_color;
+
+            vec3 attenuation;
+            Ray scattered;
             if (scatter(rec.mat, r, rec, attenuation, scattered)) {
-                vec3 emitted_light = rec.mat.emission_col * rec.mat.emission_str;
-                light += emitted_light * final_color;
                 final_color *= attenuation;
+                
+                if (i > 3) {
+                    float p = max(final_color.r, max(final_color.g, final_color.b));
+                    p = clamp(p, 0.05, 0.95);
+
+                    if (rand() > p) break;
+
+                    final_color /= p;
+                }
+
                 r = scattered;
             } else {
                 return vec3(0);

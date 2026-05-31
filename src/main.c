@@ -71,7 +71,9 @@ void add_triangle(Hitables *hitables,
     append((*(hitables)), h);
 }
 
-MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset, float scale) {
+#define USE_MTL (MaterialData){-1, (Vector3){0}, 0, (Vector3){0}, 0}
+
+MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset, float scale, MaterialData material) {
     fastObjMesh *m = fast_obj_read(obj_file);
     if (!m) { printf("Couldn't read obj file `%s`\n", obj_file); exit(1); }
 
@@ -101,31 +103,27 @@ MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset, float scal
 
         uint material_index = m->face_materials[i];
         fastObjMaterial *mat = &m->materials[material_index];
+        
+        if (material.type == -1) {
+            Vector3 albedo = {0};
+            if (material_index < m->material_count) {
+                material.albedo = (Vector3){mat->Kd[0], mat->Kd[1], mat->Kd[2]};
+            } else {
+                material.albedo = (Vector3){0.5, 0.5, 0.5};
+            }
 
-        Vector3 albedo = {0};
-        if (material_index < m->material_count) {
-            albedo = (Vector3){mat->Kd[0], mat->Kd[1], mat->Kd[2]};
-        } else {
-            albedo = (Vector3){0.5, 0.5, 0.5};
-        }
-
-        Vector3 emission = {0};
-        float emission_strength = 0;
-        if (material_index < m->material_count) {
-            emission = (Vector3){mat->Ke[0], mat->Ke[1], mat->Ke[2]};
-            emission_strength = fmaxf(fmaxf(emission.x, emission.y), emission.z);
+            Vector3 emission = {0};
+            float emission_strength = 0;
+            if (material_index < m->material_count) {
+                material.emission_col = (Vector3){mat->Ke[0], mat->Ke[1], mat->Ke[2]};
+                material.emission_str = fmaxf(fmaxf(mat->Ke[0], mat->Ke[1]), mat->Ke[2]);
+            }
         }
 
         add_triangle(
             hitables,
             a, b, c,
-            (MaterialData){
-                LAMBERTIAN,   
-                albedo,
-                0,            
-                emission,
-                emission_strength
-            }
+            material
         );
 
         index_offset += 3;
@@ -149,7 +147,15 @@ World setup_world(void) {
         0,
         10
     };
-    append(meshes, load_obj("assets/cornell-box.obj", &hitables, (Vector3){0}, 1));
+    append(meshes, load_obj("assets/empty-cornell.obj", &hitables, (Vector3){0}, 1, USE_MTL));
+    MaterialData mat = {
+        DIELECTRIC,
+        {0.2, 0.2, 0.9},
+        0.5,
+        {0},
+        0
+    };
+    append(meshes, load_obj("assets/suzanne.obj", &hitables, (Vector3){0, 1, -1.5}, 1.5, mat));
     return (World){hitables, meshes};
 }
 
@@ -314,6 +320,9 @@ int main(int argc, char **argv) {
         EndShaderMode();
 
         DrawFPS(GetScreenWidth() - 100, 10);
+        char buf[128] = {0};
+        sprintf(buf, "%d", frame);
+        DrawText(buf, GetScreenWidth() - 150, 50, 20, GREEN);
 
         if (IsKeyPressed(KEY_G)) show_gui = !show_gui;
         if (show_gui) {

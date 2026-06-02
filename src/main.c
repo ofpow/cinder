@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <float.h>
 
-#include "shared/definitions.h"
+#include "definitions.h"
 
 #include "array.h"
 
@@ -142,27 +142,33 @@ World setup_world(void) {
         10
     };
 
+    Hitables lights = (Hitables){
+        calloc(10, sizeof(Hitable)),
+        0,
+        10
+    };
+
     Meshes meshes = (Meshes){
         calloc(10, sizeof(MeshInfo)),
         0,
         10
     };
-    append(meshes, load_obj("assets/empty-cornell.obj", &hitables, (Vector3){0}, 1, USE_MTL));
-    MaterialData mat = {
-        DIELECTRIC,
-        {0.2, 0.2, 0.9},
-        0.5,
-        {0},
-        0
-    };
-    append(meshes, load_obj("assets/suzanne.obj", &hitables, (Vector3){0, 1, -1.5}, 1.5, mat));
-    return (World){hitables, meshes};
+    append(meshes, load_obj("assets/empty-cornell.obj", &hitables, &lights, (Vector3){0}, 1, USE_MTL));
+    //MaterialData mat = {
+    //    DIELECTRIC,
+    //    {0.2, 0.2, 0.9},
+    //    0.5,
+    //    {0},
+    //    0
+    //};
+    //append(meshes, load_obj("assets/suzanne.obj", &hitables, &lights, (Vector3){0, 1, -1.5}, 1.5, mat));
+    return (World){hitables, lights, meshes};
 }
 
 const char compute_code[] = {
 #embed "shaders/glsl.glsl"
     ,
-#embed "shared/definitions.h"
+#embed "definitions.h"
     ,
 #embed "shaders/ray.glsl"
     ,

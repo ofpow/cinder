@@ -22,6 +22,7 @@
 
 unsigned int screen_ssbo;
 unsigned int hitables_ssbo;
+unsigned int lights_ssbo;
 unsigned int meshes_ssbo;
 
 unsigned int compute_shader;
@@ -30,7 +31,7 @@ unsigned int compute_program;
 Shader frag_shader;
 
 #define SCALE (3072 / X)
-const int X = 768;
+const int X = 512;
 const int Y = X/2;
 
 const Vector2 resolution = { (float)X, (float)Y };
@@ -40,6 +41,7 @@ define_array(Meshes, MeshInfo);
 
 typedef struct World {
     Hitables hitables;
+    Hitables lights;
     Meshes meshes;
 } World;
 
@@ -73,7 +75,7 @@ void add_triangle(Hitables *hitables,
 
 #define USE_MTL (MaterialData){-1, (Vector3){0}, 0, (Vector3){0}, 0}
 
-MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset, float scale, MaterialData material) {
+MeshInfo load_obj(char *obj_file, Hitables *hitables, Hitables *lights, Vector3 offset, float scale, MaterialData material) {
     fastObjMesh *m = fast_obj_read(obj_file);
     if (!m) { printf("Couldn't read obj file `%s`\n", obj_file); exit(1); }
 
@@ -126,6 +128,13 @@ MeshInfo load_obj(char *obj_file, Hitables *hitables, Vector3 offset, float scal
             material
         );
 
+        if (material.emission_str > 0)
+            add_triangle(
+                lights,
+                a, b, c,
+                material
+            );
+
         index_offset += 3;
         mesh.num_triangles++;
     }
@@ -154,14 +163,14 @@ World setup_world(void) {
         10
     };
     append(meshes, load_obj("assets/empty-cornell.obj", &hitables, &lights, (Vector3){0}, 1, USE_MTL));
-    //MaterialData mat = {
-    //    DIELECTRIC,
-    //    {0.2, 0.2, 0.9},
-    //    0.5,
-    //    {0},
-    //    0
-    //};
-    //append(meshes, load_obj("assets/suzanne.obj", &hitables, &lights, (Vector3){0, 1, -1.5}, 1.5, mat));
+    MaterialData mat = {
+        DIELECTRIC,
+        {0.2, 0.2, 0.9},
+        0.5,
+        {0},
+        0
+    };
+    append(meshes, load_obj("assets/suzanne.obj", &hitables, &lights, (Vector3){0, 1.6, -1.5}, 1, mat));
     return (World){hitables, lights, meshes};
 }
 
@@ -211,10 +220,12 @@ void run_compute_shader(int rand_seed) {
     if (reset == 1) {
         hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
         meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
+        lights_ssbo = rlLoadShaderBuffer(world.lights.index*sizeof(Hitable), world.lights.data, RL_DYNAMIC_COPY);
     }
     rlBindShaderBuffer(screen_ssbo, 1);
     rlBindShaderBuffer(hitables_ssbo, 2);
     rlBindShaderBuffer(meshes_ssbo, 3);
+    rlBindShaderBuffer(lights_ssbo, 4);
     rlSetUniform(rlGetLocationUniform(compute_program, "reset"), &reset, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "rand_seed"), &rand_seed, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "lookfrom"), &lookfrom, RL_SHADER_UNIFORM_VEC3, 1);
@@ -267,6 +278,7 @@ void setup_shaders(void) {
     rlSetUniform(rlGetLocationUniform(compute_program, "X"), &X, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "Y"), &Y, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "num_hitables"), &world.hitables.index, RL_SHADER_UNIFORM_INT, 1);
+    rlSetUniform(rlGetLocationUniform(compute_program, "num_lights"), &world.lights.index, RL_SHADER_UNIFORM_INT, 1);
     rlSetUniform(rlGetLocationUniform(compute_program, "num_meshes"), &world.meshes.index, RL_SHADER_UNIFORM_INT, 1);
     rlDisableShader();
 
@@ -277,6 +289,7 @@ void setup_shaders(void) {
     screen_ssbo = rlLoadShaderBuffer(X*Y*sizeof(Vector4), NULL, RL_DYNAMIC_COPY);
     hitables_ssbo = rlLoadShaderBuffer(world.hitables.index*sizeof(Hitable), world.hitables.data, RL_DYNAMIC_COPY);
     meshes_ssbo = rlLoadShaderBuffer(world.meshes.index*sizeof(MeshInfo), world.meshes.data, RL_DYNAMIC_COPY);
+    lights_ssbo = rlLoadShaderBuffer(world.lights.index*sizeof(Hitable), world.lights.data, RL_DYNAMIC_COPY);
 }
 
 bool interactive = false;
@@ -302,7 +315,6 @@ int main(int argc, char **argv) {
     if (!interactive) render_scene(2000);
 
     ClearWindowState(FLAG_WINDOW_HIDDEN);
-
     while (!WindowShouldClose()) {
         frame++;
 
@@ -344,6 +356,7 @@ int main(int argc, char **argv) {
 
     rlUnloadShaderBuffer(screen_ssbo);
     rlUnloadShaderBuffer(hitables_ssbo);
+    rlUnloadShaderBuffer(lights_ssbo);
     rlUnloadShaderBuffer(meshes_ssbo);
 
     rlUnloadShaderProgram(compute_program);

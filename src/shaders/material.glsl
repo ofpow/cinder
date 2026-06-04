@@ -1,7 +1,7 @@
 bool scatter_lambertian(vec3 albedo, hit_record rec, inout vec3 attenuation, inout Ray scattered) {
     vec3 target = rec.p + rec.normal + random_in_unit_sphere();
     scattered = Ray(rec.p, target-rec.p);
-    attenuation = albedo;
+    attenuation = albedo / M_PI;
     return true;
 }
 

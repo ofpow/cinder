@@ -6,8 +6,13 @@ layout(std430, binding = 3) restrict buffer Meshes {
     MeshInfo meshes[];
 };
 
+layout(std430, binding = 4) restrict buffer Lights {
+    Hitable lights[];
+};
+
 uniform int num_hitables;
 uniform int num_meshes;
+uniform int num_lights;
 
 bool ray_bounding_box(Ray r, vec3 box_min, vec3 box_max) {
     vec3 inv_dir = 1 / r.direction;
@@ -19,7 +24,6 @@ bool ray_bounding_box(Ray r, vec3 box_min, vec3 box_max) {
     float t_far = min(min(t2.x, t2.y), t2.z);
     return t_near <= t_far;
 };
-
 
 bool hit(Ray r, float t_min, float t_max, inout hit_record rec) {
     hit_record temp_rec = hit_record(0, vec3(0), vec3(0), MaterialData(LAMBERTIAN, vec3(0), 0, vec3(0), 0));

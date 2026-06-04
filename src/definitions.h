@@ -69,3 +69,8 @@ struct MeshInfo {
     vec3 bounds_max;
     uint num_triangles;
 };
+
+struct LightSample {
+    vec3 position, normal, emission;
+    float pdf;
+};

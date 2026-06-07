@@ -238,7 +238,10 @@ void run_compute_shader(int rand_seed) {
     rlDisableShader();
 }
 
-void print_progress(size_t count, size_t max, double time_spent) {
+double time_elapsed = 0;
+int samples_done = 0;
+
+void print_progress(size_t count, size_t max) {
     int bar_width = 50;
     float progress = (float) count / max;
     int bar_length = progress * bar_width;
@@ -251,7 +254,7 @@ void print_progress(size_t count, size_t max, double time_spent) {
         printf(" ");
     }
 
-    double time_left = (time_spent * ((max - count) / 20)) / 1000;
+    double time_left = time_elapsed/samples_done * (max - count) / 1000;
     printf("] %.2f%% %.2f secs left", progress * 100, time_left);
 
     fflush(stdout); 
@@ -269,11 +272,13 @@ void render_scene(int samples) {
             clock_gettime(CLOCK_MONOTONIC, &end);
             double ms_spent = (double)(end.tv_sec - start.tv_sec) * 1000.0 + 
                         (double)(end.tv_nsec - start.tv_nsec) / 1000000.0;
-            print_progress(i, samples, ms_spent);
+            time_elapsed += ms_spent;
+            samples_done += 20;
+            print_progress(i, samples);
             start = end;
         }
     }
-    print_progress(samples, samples, 0);
+    print_progress(samples, samples);
     printf("\n");
 }
 

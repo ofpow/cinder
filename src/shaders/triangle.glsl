@@ -1,6 +1,13 @@
+bool cull_backfaces = true;
+
 bool triangle_hit(Triangle t, Ray r, float t_min, float t_max, inout hit_record rec) {
     vec3 edge1 = t.b - t.a;
     vec3 edge2 = t.c - t.a;
+    
+    if (cull_backfaces) {
+        vec3 normal = cross(edge1, edge2);
+        if (dot(normal, r.direction) > 0) return false;
+    }
 
     vec3 pvec = cross(r.direction, edge2);
     float det = dot(edge1, pvec);

@@ -162,7 +162,7 @@ World setup_world(void) {
         0,
         10
     };
-    append(meshes, load_obj("assets/empty-cornell.obj", &hitables, &lights, (Vector3){0}, 1, USE_MTL));
+    append(meshes, load_obj("assets/box.obj", &hitables, &lights, (Vector3){0}, 1, USE_MTL));
     MaterialData mat = {
         DIELECTRIC,
         {0.2, 0.2, 0.9},

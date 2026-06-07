@@ -15,6 +15,7 @@
 #include <math.h>
 #include <assert.h>
 #include <float.h>
+#include <time.h>
 
 #include "definitions.h"
 
@@ -237,7 +238,7 @@ void run_compute_shader(int rand_seed) {
     rlDisableShader();
 }
 
-void print_progress(size_t count, size_t max) {
+void print_progress(size_t count, size_t max, double time_spent) {
     int bar_width = 50;
     float progress = (float) count / max;
     int bar_length = progress * bar_width;
@@ -249,22 +250,30 @@ void print_progress(size_t count, size_t max) {
     for (int i = bar_length; i < bar_width; ++i) {
         printf(" ");
     }
-    printf("] %.2f%%", progress * 100);
+
+    double time_left = (time_spent * ((max - count) / 20)) / 1000;
+    printf("] %.2f%% %.2f secs left", progress * 100, time_left);
 
     fflush(stdout); 
 }
 
 void render_scene(int samples) {
     SetTargetFPS(60);
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     for (int i = 0; i < samples; i++) {
         run_compute_shader(i);
-        if (i % 10 == 0) {
+        if (i % 20 == 0) {
             glFinish();
-            print_progress(i, samples);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            double ms_spent = (double)(end.tv_sec - start.tv_sec) * 1000.0 + 
+                        (double)(end.tv_nsec - start.tv_nsec) / 1000000.0;
+            print_progress(i, samples, ms_spent);
+            start = end;
         }
     }
-    print_progress(samples, samples);
+    print_progress(samples, samples, 0);
     printf("\n");
 }
 

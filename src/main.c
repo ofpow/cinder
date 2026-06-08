@@ -48,21 +48,6 @@ typedef struct World {
 
 #include "gui.h"
 
-void add_sphere(Hitables *hitables,
-        Vector3 center,
-        float radius,
-        MaterialData mat
-) {
-    Sphere s = {
-        center,
-        radius,
-        mat
-    };
-    Hitable h = {0};
-    h.type = SPHERE;
-    memcpy(h.data, &s, sizeof(Sphere));
-    append((*(hitables)), h);
-}
 void add_triangle(Hitables *hitables,
         Vector3 a, Vector3 b, Vector3 c,
         MaterialData mat
